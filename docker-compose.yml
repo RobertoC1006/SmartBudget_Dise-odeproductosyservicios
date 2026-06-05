@@ -1,10 +1,10 @@
-name: smartbudget_backend_dise
+name: smartbudged2.0
 
 services:
   # ─── MySQL 8.0 ────────────────────────────────────────────────────────────
   mysql:
     image: mysql:8.0
-    container_name: smartbudget_dise_mysql
+    container_name: smartbudget_mysql
     restart: always
     environment:
       MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
@@ -18,7 +18,7 @@ services:
     networks:
       - smartbudget_net
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${MYSQL_ROOT_PASSWORD}"]
+      test: [ "CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${MYSQL_ROOT_PASSWORD}" ]
       interval: 10s
       timeout: 5s
       retries: 10
@@ -28,7 +28,7 @@ services:
     build:
       context: ./backend
       dockerfile: Dockerfile
-    container_name: smartbudget_dise_backend
+    container_name: smartbudget_backend
     restart: always
     env_file:
       - .env
@@ -42,16 +42,12 @@ services:
     volumes:
       - ./backend:/app
     command: >
-      uvicorn api.main:app
-      --host 0.0.0.0
-      --port 8000
-      --reload
-      --reload-dir /app
+      uvicorn api.main:app --host 0.0.0.0 --port 8000 --reload --reload-dir /app
 
   # ─── Adminer (Gestor BD) ──────────────────────────────────────────────────
   adminer:
     image: adminer:latest
-    container_name: smartbudget_dise_adminer
+    container_name: smartbudget_adminer
     restart: always
     ports:
       - "8082:8080"
