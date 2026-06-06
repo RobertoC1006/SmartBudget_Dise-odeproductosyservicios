@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_text_styles.dart';
+import '../../core/theme/app_spacing.dart';
 
 class BottomNavBar extends StatelessWidget {
   final int currentIndex;
@@ -35,61 +36,101 @@ class BottomNavBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      decoration: const BoxDecoration(
-        color: AppColors.surfaceWhite,
-        border: Border(
-          top: BorderSide(color: AppColors.dividerGray, width: 1.0),
+    final items = [
+      _NavBarItem(icon: LucideIcons.home, label: 'Inicio'),
+      _NavBarItem(icon: LucideIcons.creditCard, label: 'Gastos'),
+      _NavBarItem(icon: LucideIcons.target, label: 'Metas'),
+      _NavBarItem(icon: LucideIcons.barChart2, label: 'Análisis'),
+      _NavBarItem(icon: LucideIcons.user, label: 'Perfil'),
+    ];
+
+    return SafeArea(
+      top: false,
+      child: Container(
+        margin: const EdgeInsets.fromLTRB(16.0, 4.0, 16.0, 12.0),
+        decoration: BoxDecoration(
+          color: AppColors.surfaceWhite,
+          borderRadius: BorderRadius.circular(AppSpacing.radiusXl),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.05),
+              blurRadius: 16,
+              offset: const Offset(0, 4),
+            ),
+          ],
+          border: Border.all(
+            color: AppColors.dividerGray.withValues(alpha: 0.6),
+            width: 1.0,
+          ),
         ),
-      ),
-      child: BottomNavigationBar(
-        currentIndex: currentIndex,
-        onTap: (index) => _onTap(context, index),
-        elevation: 0,
-        backgroundColor: AppColors.surfaceWhite,
-        selectedItemColor: AppColors.primaryGreen,
-        unselectedItemColor: AppColors.textSecondary,
-        selectedLabelStyle: AppTextStyles.captionBold.copyWith(color: AppColors.primaryGreen, fontSize: 11),
-        unselectedLabelStyle: AppTextStyles.caption.copyWith(color: AppColors.textSecondary, fontSize: 11),
-        type: BottomNavigationBarType.fixed,
-        items: const [
-          BottomNavigationBarItem(
-            icon: Padding(
-              padding: EdgeInsets.only(bottom: 4),
-              child: Icon(LucideIcons.home, size: 22),
-            ),
-            label: 'Inicio',
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 8.0),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceAround,
+            children: List.generate(items.length, (index) {
+              final isSelected = currentIndex == index;
+              final item = items[index];
+
+              return GestureDetector(
+                onTap: () => _onTap(context, index),
+                behavior: HitTestBehavior.opaque,
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 250),
+                  curve: Curves.easeInOut,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16.0,
+                    vertical: 10.0,
+                  ),
+                  decoration: BoxDecoration(
+                    color: isSelected ? AppColors.primaryLight : Colors.transparent,
+                    borderRadius: BorderRadius.circular(AppSpacing.radiusRound),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        item.icon,
+                        size: 20,
+                        color: isSelected ? AppColors.primaryDark : AppColors.textSecondary,
+                      ),
+                      AnimatedSize(
+                        duration: const Duration(milliseconds: 250),
+                        curve: Curves.easeInOut,
+                        alignment: Alignment.centerLeft,
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            if (isSelected) ...[
+                              const SizedBox(width: 8),
+                              Text(
+                                item.label,
+                                style: AppTextStyles.captionBold.copyWith(
+                                  color: AppColors.primaryDark,
+                                  fontSize: 13,
+                                ),
+                              ),
+                            ],
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            }),
           ),
-          BottomNavigationBarItem(
-            icon: Padding(
-              padding: EdgeInsets.only(bottom: 4),
-              child: Icon(LucideIcons.creditCard, size: 22),
-            ),
-            label: 'Gastos',
-          ),
-          BottomNavigationBarItem(
-            icon: Padding(
-              padding: EdgeInsets.only(bottom: 4),
-              child: Icon(LucideIcons.target, size: 22),
-            ),
-            label: 'Metas',
-          ),
-          BottomNavigationBarItem(
-            icon: Padding(
-              padding: EdgeInsets.only(bottom: 4),
-              child: Icon(LucideIcons.barChart2, size: 22),
-            ),
-            label: 'Análisis',
-          ),
-          BottomNavigationBarItem(
-            icon: Padding(
-              padding: EdgeInsets.only(bottom: 4),
-              child: Icon(LucideIcons.user, size: 22),
-            ),
-            label: 'Perfil',
-          ),
-        ],
+        ),
       ),
     );
   }
+}
+
+class _NavBarItem {
+  final IconData icon;
+  final String label;
+
+  _NavBarItem({
+    required this.icon,
+    required this.label,
+  });
 }
