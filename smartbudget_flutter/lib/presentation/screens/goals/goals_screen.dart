@@ -41,170 +41,246 @@ class _GoalsScreenState extends State<GoalsScreen> {
     return Scaffold(
       backgroundColor: AppColors.backgroundWhite,
       body: SafeArea(
-        child: RefreshIndicator(
-          onRefresh: () => goalProvider.loadGoals(),
-          color: AppColors.primaryGreen,
-          child: SingleChildScrollView(
-            physics: const AlwaysScrollableScrollPhysics(),
-            padding: const EdgeInsets.symmetric(
-              horizontal: AppSpacing.lg,
-              vertical: AppSpacing.md,
+        child: Stack(
+          children: [
+            // Soft waving curves background matching login style
+            Positioned.fill(
+              child: CustomPaint(
+                painter: _GoalsBackgroundPainter(),
+              ),
             ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Header (with avatar image and notification bell)
-                const AppHeader(),
-
-                const SizedBox(height: AppSpacing.md),
-
-                // Title and "+ Nueva meta" Row
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            RefreshIndicator(
+              onRefresh: () => goalProvider.loadGoals(),
+              color: AppColors.primaryGreen,
+              child: SingleChildScrollView(
+                physics: const AlwaysScrollableScrollPhysics(),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: AppSpacing.lg,
+                  vertical: AppSpacing.md,
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      'Mis metas',
-                      style: GoogleFonts.inter(
-                        fontSize: 22,
-                        fontWeight: FontWeight.w800,
-                        color: AppColors.textPrimary,
-                      ),
-                    ),
-                    GestureDetector(
-                      onTap: () => _showCreateGoalDialog(context),
-                      child: Row(
-                        children: [
-                          const Icon(
-                            LucideIcons.plus,
-                            color: AppColors.primaryGreen,
-                            size: 16,
+                    // Header (with avatar image and notification bell)
+                    const AppHeader(),
+
+                    const SizedBox(height: AppSpacing.md),
+
+                    // Title and "+ Nueva meta" Row
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          'Mis metas',
+                          style: GoogleFonts.inter(
+                            fontSize: 22,
+                            fontWeight: FontWeight.w800,
+                            color: AppColors.textPrimary,
                           ),
-                          const SizedBox(width: 4),
-                          Text(
-                            'Nueva meta',
-                            style: AppTextStyles.bodyMedium.copyWith(
-                              fontWeight: FontWeight.bold,
-                              color: AppColors.primaryGreen,
-                              fontSize: 14,
-                            ),
+                        ),
+                        GestureDetector(
+                          onTap: () => _showCreateGoalDialog(context),
+                          child: Row(
+                            children: [
+                              const Icon(
+                                LucideIcons.plus,
+                                color: AppColors.primaryGreen,
+                                size: 16,
+                              ),
+                              const SizedBox(width: 4),
+                              Text(
+                                'Nueva meta',
+                                style: AppTextStyles.bodyMedium.copyWith(
+                                  fontWeight: FontWeight.bold,
+                                  color: AppColors.primaryGreen,
+                                  fontSize: 14,
+                                ),
+                              ),
+                            ],
                           ),
-                        ],
-                      ),
-                    ),
+                        ),
+                      ],
+                    ).animateEntrance(delay: 0.ms),
+
+                    const SizedBox(height: AppSpacing.lg),
+
+                    // Card 1: Meta sugerida para ti (premium gradients + geometries + floating animation)
+                    _buildSuggestedGoalCard().animateEntrance(delay: 50.ms),
+
+                    const SizedBox(height: AppSpacing.xl),
+
+                    // Segmented Tab Selector
+                    _buildTabSelector().animateEntrance(delay: 100.ms),
+
+                    const SizedBox(height: AppSpacing.lg),
+
+                    // Active List or Loading State
+                    _buildGoalsList(goalProvider).animateEntrance(delay: 150.ms),
                   ],
-                ).animateEntrance(delay: 0.ms),
-
-                const SizedBox(height: AppSpacing.lg),
-
-                // Card 1: Meta sugerida para ti
-                _buildSuggestedGoalCard().animateEntrance(delay: 50.ms),
-
-                const SizedBox(height: AppSpacing.xl),
-
-                // Segmented Tab Selector
-                _buildTabSelector().animateEntrance(delay: 100.ms),
-
-                const SizedBox(height: AppSpacing.lg),
-
-                // Active List or Loading State
-                _buildGoalsList(goalProvider).animateEntrance(delay: 150.ms),
-              ],
+                ),
+              ),
             ),
-          ),
+          ],
         ),
       ),
     );
   }
 
   Widget _buildSuggestedGoalCard() {
-    return Container(
-      decoration: BoxDecoration(
-        color: AppColors.surfaceWhite,
-        borderRadius: BorderRadius.circular(28),
-        border: Border.all(
-          color: const Color(0xFFE5E7EB),
-          width: 1.0,
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.02),
-            blurRadius: 16,
-            offset: const Offset(0, 4),
-          ),
-        ],
+    return ClipRRect(
+      borderRadius: const BorderRadius.only(
+        topLeft: Radius.circular(28),
+        bottomLeft: Radius.circular(28),
+        bottomRight: Radius.circular(28),
+        topRight: Radius.circular(80),
       ),
-      padding: const EdgeInsets.all(20),
-      child: Row(
-        children: [
-          Expanded(
-            flex: 3,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Meta sugerida para ti 💡',
-                  style: GoogleFonts.inter(
-                    fontSize: 15,
-                    fontWeight: FontWeight.w800,
-                    color: AppColors.textPrimary,
-                  ),
-                ),
-                const SizedBox(height: 6),
-                Text(
-                  'Crea una meta de emergencia para estar preparado ante imprevistos.',
-                  style: AppTextStyles.bodySecondary.copyWith(
-                    fontSize: 12,
-                    color: AppColors.textSecondary,
-                    height: 1.3,
-                  ),
-                ),
-                const SizedBox(height: 16),
-                GestureDetector(
-                  onTap: () => _showCreateGoalDialog(
-                    context,
-                    defaultName: 'Fondo de emergencia 🛡️',
-                    defaultAmount: 3000.00,
-                  ),
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 10,
-                    ),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFE2F3DA), // Light green background matching mockup
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    child: Text(
-                      'Crear meta',
-                      style: AppTextStyles.captionBold.copyWith(
-                        color: AppColors.primaryDark,
-                        fontSize: 12,
-                      ),
-                    ),
-                  ),
-                ),
-              ],
-            ),
+      child: Container(
+        decoration: BoxDecoration(
+          borderRadius: const BorderRadius.only(
+            topLeft: Radius.circular(28),
+            bottomLeft: Radius.circular(28),
+            bottomRight: Radius.circular(28),
+            topRight: Radius.circular(80),
           ),
-          const SizedBox(width: 8),
-          Expanded(
-            flex: 2,
-            child: Image.asset(
-              'assets/images/piggy_bank_3d.png',
-              fit: BoxFit.contain,
-              height: 95,
-              errorBuilder: (context, error, stackTrace) {
-                return const Center(
-                  child: Icon(
-                    LucideIcons.piggyBank,
-                    color: AppColors.primaryGreen,
-                    size: 40,
-                  ),
-                );
-              },
-            ),
+          gradient: const LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              AppColors.accentGreenSoft,
+              AppColors.accentGreenLight,
+            ],
           ),
-        ],
+          border: Border.all(
+            color: AppColors.accentGreenBorder,
+            width: 1.2,
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.02),
+              blurRadius: 16,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: Stack(
+          children: [
+            // Background circular geometries for texture
+            Positioned(
+              right: -30,
+              top: -30,
+              child: Container(
+                width: 130,
+                height: 130,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: AppColors.primaryGreen.withValues(alpha: 0.02),
+                ),
+              ),
+            ),
+            Positioned(
+              right: -10,
+              top: -10,
+              child: Container(
+                width: 80,
+                height: 80,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: AppColors.primaryGreen.withValues(alpha: 0.03),
+                ),
+              ),
+            ),
+            // Card Content
+            Padding(
+              padding: const EdgeInsets.all(20),
+              child: Row(
+                children: [
+                  Expanded(
+                    flex: 3,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Meta sugerida para ti 💡',
+                          style: GoogleFonts.inter(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w800,
+                            color: AppColors.textPrimary,
+                          ),
+                        ),
+                        const SizedBox(height: 6),
+                        Text(
+                          'Crea una meta de emergencia para estar preparado ante imprevistos.',
+                          style: AppTextStyles.bodySecondary.copyWith(
+                            fontSize: 12,
+                            color: AppColors.textSecondary,
+                            height: 1.3,
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+                        GestureDetector(
+                          onTap: () => _showCreateGoalDialog(
+                            context,
+                            defaultName: 'Fondo de emergencia 🛡️',
+                            defaultAmount: 3000.00,
+                          ),
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 16,
+                              vertical: 10,
+                            ),
+                            decoration: BoxDecoration(
+                              color: AppColors.primaryGreen,
+                              borderRadius: BorderRadius.circular(20),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: AppColors.primaryGreen.withValues(alpha: 0.2),
+                                  blurRadius: 8,
+                                  offset: const Offset(0, 3),
+                                ),
+                              ],
+                            ),
+                            child: Text(
+                              'Crear meta',
+                              style: AppTextStyles.captionBold.copyWith(
+                                color: Colors.white,
+                                fontSize: 12,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    flex: 2,
+                    child: Image.asset(
+                      'assets/images/piggy_bank_3d.png',
+                      fit: BoxFit.contain,
+                      height: 95,
+                      errorBuilder: (context, error, stackTrace) {
+                        return const Center(
+                          child: Icon(
+                            LucideIcons.piggyBank,
+                            color: AppColors.primaryGreen,
+                            size: 40,
+                          ),
+                        );
+                      },
+                    )
+                    .animate(onPlay: (controller) => controller.repeat(reverse: true))
+                    .slideY(
+                      begin: 0,
+                      end: -0.08,
+                      duration: 1800.ms,
+                      curve: Curves.easeInOut,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -215,6 +291,10 @@ class _GoalsScreenState extends State<GoalsScreen> {
       decoration: BoxDecoration(
         color: const Color(0xFFF3F4F6),
         borderRadius: BorderRadius.circular(24),
+        border: Border.all(
+          color: const Color(0xFFE5E7EB),
+          width: 1,
+        ),
       ),
       child: Row(
         children: [
@@ -225,13 +305,23 @@ class _GoalsScreenState extends State<GoalsScreen> {
                   _activeTab = 0;
                 });
               },
-              child: Container(
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 200),
                 padding: const EdgeInsets.symmetric(vertical: 10),
                 decoration: BoxDecoration(
                   color: _activeTab == 0
                       ? const Color(0xFFE2F3DA)
                       : Colors.transparent,
                   borderRadius: BorderRadius.circular(20),
+                  boxShadow: _activeTab == 0
+                      ? [
+                          BoxShadow(
+                            color: AppColors.primaryGreen.withValues(alpha: 0.06),
+                            blurRadius: 8,
+                            offset: const Offset(0, 3),
+                          ),
+                        ]
+                      : [],
                 ),
                 child: Text(
                   'Mis metas',
@@ -254,13 +344,23 @@ class _GoalsScreenState extends State<GoalsScreen> {
                   _activeTab = 1;
                 });
               },
-              child: Container(
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 200),
                 padding: const EdgeInsets.symmetric(vertical: 10),
                 decoration: BoxDecoration(
                   color: _activeTab == 1
                       ? const Color(0xFFE2F3DA)
                       : Colors.transparent,
                   borderRadius: BorderRadius.circular(20),
+                  boxShadow: _activeTab == 1
+                      ? [
+                          BoxShadow(
+                            color: AppColors.primaryGreen.withValues(alpha: 0.06),
+                            blurRadius: 8,
+                            offset: const Offset(0, 3),
+                          ),
+                        ]
+                      : [],
                 ),
                 child: Text(
                   'Historial',
@@ -346,144 +446,203 @@ class _GoalsScreenState extends State<GoalsScreen> {
         ? DateFormat("dd MMM yyyy", 'es').format(goal.fechaLimite!)
         : 'Sin fecha';
 
-    return Container(
-      margin: const EdgeInsets.only(bottom: 16),
-      decoration: BoxDecoration(
-        color: AppColors.surfaceWhite,
-        borderRadius: BorderRadius.circular(24),
-        border: Border.all(
-          color: const Color(0xFFE5E7EB),
-          width: 1.0,
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(28),
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 16),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(28),
+          gradient: const LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              AppColors.accentGreenSoft,
+              AppColors.accentGreenLight,
+            ],
+          ),
+          border: Border.all(
+            color: AppColors.accentGreenBorder,
+            width: 1.2,
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.02),
+              blurRadius: 16,
+              offset: const Offset(0, 4),
+            ),
+          ],
         ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.02),
-            blurRadius: 16,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      padding: const EdgeInsets.all(20),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                goal.nombre,
-                style: GoogleFonts.inter(
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                  color: AppColors.textPrimary,
+        child: Stack(
+          children: [
+            // Geometry circles
+            Positioned(
+              right: -30,
+              top: -30,
+              child: Container(
+                width: 130,
+                height: 130,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: AppColors.primaryGreen.withValues(alpha: 0.015),
                 ),
               ),
-              // Trash delete button if active tab is 0
-              if (_activeTab == 0)
-                IconButton(
-                  icon: const Icon(LucideIcons.trash2, size: 16),
-                  color: AppColors.expenseRed.withValues(alpha: 0.7),
-                  onPressed: () => _confirmDeleteGoal(context, goal),
-                  padding: EdgeInsets.zero,
-                  constraints: const BoxConstraints(),
-                ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              RichText(
-                text: TextSpan(
-                  style: GoogleFonts.inter(
-                    fontSize: 13,
-                    color: AppColors.textSecondary,
-                  ),
-                  children: [
-                    TextSpan(
-                      text: 'S/ ${goal.saldoAcumulado.toStringAsFixed(2)} ',
-                      style: const TextStyle(
-                        fontWeight: FontWeight.w700,
-                        color: AppColors.textPrimary,
-                      ),
-                    ),
-                    const TextSpan(text: 'de '),
-                    TextSpan(
-                      text: 'S/ ${goal.montoObjetivo.toStringAsFixed(2)}',
-                      style: const TextStyle(
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ],
+            ),
+            Positioned(
+              right: -10,
+              top: -10,
+              child: Container(
+                width: 80,
+                height: 80,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: AppColors.primaryGreen.withValues(alpha: 0.025),
                 ),
               ),
-              Text(
-                '$progressPercent%',
-                style: GoogleFonts.inter(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w800,
-                  color: AppColors.textPrimary,
-                ),
+            ),
+            // Watermark Icon
+            Positioned(
+              right: 24,
+              bottom: 16,
+              child: Icon(
+                _getGoalIconData(goal.nombre),
+                size: 85,
+                color: AppColors.primaryGreen.withValues(alpha: 0.035),
               ),
-            ],
-          ),
-          const SizedBox(height: 8),
-          ProgressBar(
-            progress: progress,
-            foregroundColor: const Color(0xFF8BC34A), // Lime green matching mockup
-            height: 8.0,
-          ),
-          const SizedBox(height: 16),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
-              Column(
+            ),
+            // Card Content
+            Padding(
+              padding: const EdgeInsets.all(20),
+              child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    'Faltan: S/ ${remaining.clamp(0, double.infinity).toStringAsFixed(2)}',
-                    style: AppTextStyles.caption.copyWith(
-                      color: AppColors.textSecondary,
-                      fontWeight: FontWeight.w500,
-                      fontSize: 11.5,
-                    ),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        goal.nombre,
+                        style: GoogleFonts.inter(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          color: AppColors.textPrimary,
+                        ),
+                      ),
+                      // Trash delete button if active tab is 0
+                      if (_activeTab == 0)
+                        IconButton(
+                          icon: const Icon(LucideIcons.trash2, size: 16),
+                          color: AppColors.expenseRed.withValues(alpha: 0.7),
+                          onPressed: () => _confirmDeleteGoal(context, goal),
+                          padding: EdgeInsets.zero,
+                          constraints: const BoxConstraints(),
+                        ),
+                    ],
                   ),
-                  const SizedBox(height: 4),
-                  Text(
-                    'Fecha objetivo: $formattedDate',
-                    style: AppTextStyles.caption.copyWith(
-                      color: AppColors.textSecondary,
-                      fontWeight: FontWeight.w500,
-                      fontSize: 11.5,
-                    ),
+                  const SizedBox(height: 12),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      RichText(
+                        text: TextSpan(
+                          style: GoogleFonts.inter(
+                            fontSize: 13,
+                            color: AppColors.textSecondary,
+                          ),
+                          children: [
+                            TextSpan(
+                              text: 'S/ ${goal.saldoAcumulado.toStringAsFixed(2)} ',
+                              style: const TextStyle(
+                                fontWeight: FontWeight.w700,
+                                color: AppColors.textPrimary,
+                              ),
+                            ),
+                            const TextSpan(text: 'de '),
+                            TextSpan(
+                              text: 'S/ ${goal.montoObjetivo.toStringAsFixed(2)}',
+                              style: const TextStyle(
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      Text(
+                        '$progressPercent%',
+                        style: GoogleFonts.inter(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w800,
+                          color: AppColors.textPrimary,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  ProgressBar(
+                    progress: progress,
+                    foregroundColor: const Color(0xFF8BC34A), // Lime green matching mockup
+                    height: 8.0,
+                  ),
+                  const SizedBox(height: 16),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Faltan: S/ ${remaining.clamp(0, double.infinity).toStringAsFixed(2)}',
+                            style: AppTextStyles.caption.copyWith(
+                              color: AppColors.textSecondary,
+                              fontWeight: FontWeight.w500,
+                              fontSize: 11.5,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            'Fecha objetivo: $formattedDate',
+                            style: AppTextStyles.caption.copyWith(
+                              color: AppColors.textSecondary,
+                              fontWeight: FontWeight.w500,
+                              fontSize: 11.5,
+                            ),
+                          ),
+                        ],
+                      ),
+                      if (_activeTab == 0 && remaining > 0)
+                        GestureDetector(
+                          onTap: () => _showContributeDialog(context, goal),
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 18,
+                              vertical: 10,
+                            ),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFE2F3DA),
+                              borderRadius: BorderRadius.circular(16),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: AppColors.primaryGreen.withValues(alpha: 0.06),
+                                  blurRadius: 6,
+                                  offset: const Offset(0, 2),
+                                ),
+                              ],
+                            ),
+                            child: Text(
+                              'Aportar',
+                              style: AppTextStyles.captionBold.copyWith(
+                                color: AppColors.primaryDark,
+                                fontSize: 13,
+                              ),
+                            ),
+                          ),
+                        ),
+                    ],
                   ),
                 ],
               ),
-              if (_activeTab == 0 && remaining > 0)
-                GestureDetector(
-                  onTap: () => _showContributeDialog(context, goal),
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 18,
-                      vertical: 10,
-                    ),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFE2F3DA),
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                    child: Text(
-                      'Aportar',
-                      style: AppTextStyles.captionBold.copyWith(
-                        color: AppColors.primaryDark,
-                        fontSize: 13,
-                      ),
-                    ),
-                  ),
-                ),
-            ],
-          ),
-        ],
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -1177,3 +1336,91 @@ class _IconItem {
     required this.emoji,
   });
 }
+
+IconData _getGoalIconData(String name) {
+  if (name.contains('✈️')) return LucideIcons.plane;
+  if (name.contains('🏠')) return LucideIcons.home;
+  if (name.contains('🚗')) return LucideIcons.car;
+  if (name.contains('🎓')) return LucideIcons.graduationCap;
+  if (name.contains('❤️')) return LucideIcons.heart;
+  return LucideIcons.sparkles;
+}
+
+class _GoalsBackgroundPainter extends CustomPainter {
+  @override
+  void paint(Canvas canvas, Size size) {
+    // Top-left waving curve
+    final paint1 = Paint()
+      ..color = const Color(0xFFE2F3DA).withValues(alpha: 0.35)
+      ..style = PaintingStyle.fill;
+
+    final path1 = Path();
+    path1.moveTo(0, 0);
+    path1.lineTo(size.width, 0);
+    path1.quadraticBezierTo(
+      size.width * 0.75,
+      size.height * 0.12,
+      size.width * 0.45,
+      size.height * 0.08,
+    );
+    path1.quadraticBezierTo(
+      size.width * 0.2,
+      size.height * 0.05,
+      0,
+      size.height * 0.14,
+    );
+    path1.close();
+    canvas.drawPath(path1, paint1);
+
+    // Bottom waving hills
+    final paint2 = Paint()
+      ..color = const Color(0xFFE2F3DA).withValues(alpha: 0.3)
+      ..style = PaintingStyle.fill;
+
+    final path2 = Path();
+    path2.moveTo(0, size.height * 0.85);
+    path2.quadraticBezierTo(
+      size.width * 0.25,
+      size.height * 0.80,
+      size.width * 0.5,
+      size.height * 0.88,
+    );
+    path2.quadraticBezierTo(
+      size.width * 0.75,
+      size.height * 0.95,
+      size.width,
+      size.height * 0.90,
+    );
+    path2.lineTo(size.width, size.height);
+    path2.lineTo(0, size.height);
+    path2.close();
+    canvas.drawPath(path2, paint2);
+
+    final paint3 = Paint()
+      ..color = const Color(0xFFE8F5E9).withValues(alpha: 0.5)
+      ..style = PaintingStyle.fill;
+
+    final path3 = Path();
+    path3.moveTo(0, size.height * 0.90);
+    path3.quadraticBezierTo(
+      size.width * 0.3,
+      size.height * 0.94,
+      size.width * 0.65,
+      size.height * 0.89,
+    );
+    path3.quadraticBezierTo(
+      size.width * 0.85,
+      size.height * 0.85,
+      size.width,
+      size.height * 0.93,
+    );
+    path3.lineTo(size.width, size.height);
+    path3.lineTo(0, size.height);
+    path3.close();
+    canvas.drawPath(path3, paint3);
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
+}
+
