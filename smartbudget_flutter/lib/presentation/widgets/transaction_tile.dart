@@ -59,18 +59,25 @@ class TransactionTile extends StatelessWidget {
             child: Row(
               children: [
                 category != null
-                    ? CategoryIcon(category: category!)
+                    ? CategoryIcon(
+                        category: category!,
+                        shape: BoxShape.rectangle,
+                        borderRadius: 12.0,
+                        size: 48.0,
+                        iconSize: 22.0,
+                      )
                     : Container(
-                        width: 40,
-                        height: 40,
+                        width: 48.0,
+                        height: 48.0,
                         decoration: BoxDecoration(
                           color: isIncome ? AppColors.primaryLight : AppColors.dividerGray.withValues(alpha: 0.5),
-                          shape: BoxShape.circle,
+                          shape: BoxShape.rectangle,
+                          borderRadius: BorderRadius.circular(12.0),
                         ),
                         child: Icon(
                           isIncome ? LucideIcons.banknote : LucideIcons.moreHorizontal,
                           color: isIncome ? AppColors.incomeGreen : AppColors.textSecondary,
-                          size: 20,
+                          size: 22.0,
                         ),
                       ),
                 const SizedBox(width: AppSpacing.md),

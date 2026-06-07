@@ -6,12 +6,16 @@ class CategoryIcon extends StatelessWidget {
   final CategoriaGasto category;
   final double size;
   final double iconSize;
+  final BoxShape shape;
+  final double borderRadius;
 
   const CategoryIcon({
     super.key,
     required this.category,
     this.size = 40.0,
     this.iconSize = 20.0,
+    this.shape = BoxShape.circle,
+    this.borderRadius = 8.0,
   });
 
   @override
@@ -22,7 +26,10 @@ class CategoryIcon extends StatelessWidget {
       height: size,
       decoration: BoxDecoration(
         color: mapping.backgroundColor,
-        shape: BoxShape.circle,
+        shape: shape,
+        borderRadius: shape == BoxShape.rectangle
+            ? BorderRadius.circular(borderRadius)
+            : null,
       ),
       child: Center(
         child: Icon(

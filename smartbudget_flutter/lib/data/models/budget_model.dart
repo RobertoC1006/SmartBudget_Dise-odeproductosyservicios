@@ -21,8 +21,8 @@ class BudgetModel {
 
   factory BudgetModel.fromJson(Map<String, dynamic> json) {
     return BudgetModel(
-      id: json['id'],
-      userId: json['user_id'],
+      id: json['id'] ?? 0,
+      userId: json['user_id'] ?? 0,
       mes: json['mes'],
       anio: json['anio'],
       montoBase: (json['monto_base'] as num).toDouble(),
