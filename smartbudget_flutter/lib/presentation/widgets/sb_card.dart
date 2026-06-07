@@ -21,7 +21,7 @@ class SBCard extends StatelessWidget {
     this.border,
     this.width,
     this.height,
-    this.borderRadius = AppSpacing.radiusLg,
+    this.borderRadius = AppSpacing.radiusXl,
     this.leftHighlightColor,
     this.onTap,
   });
@@ -32,7 +32,7 @@ class SBCard extends StatelessWidget {
     Color? backgroundColor,
     Color borderColor = AppColors.dividerGray,
     double borderWidth = 1.0,
-    double borderRadius = AppSpacing.radiusLg,
+    double borderRadius = AppSpacing.radiusXl,
     VoidCallback? onTap,
   }) {
     return SBCard(
@@ -50,7 +50,7 @@ class SBCard extends StatelessWidget {
     required Color highlightColor,
     EdgeInsetsGeometry? padding,
     Color? backgroundColor,
-    double borderRadius = AppSpacing.radiusLg,
+    double borderRadius = AppSpacing.radiusXl,
     VoidCallback? onTap,
   }) {
     return SBCard(

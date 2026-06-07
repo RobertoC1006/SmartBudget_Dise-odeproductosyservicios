@@ -59,7 +59,7 @@ class _LoginScreenState extends State<LoginScreen> {
     final authProvider = Provider.of<AuthProvider>(context);
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF7FCF6), // Light soft pastel green background
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor, // Light soft pastel green background
       body: Stack(
         children: [
           // Bottom subtle chart graphic decoration
@@ -415,7 +415,7 @@ class _BottomChartPainter extends CustomPainter {
       end: Alignment.bottomCenter,
       colors: [
         const Color(0xFFE6F7D4).withValues(alpha: 0.4),
-        const Color(0xFFF7FCF6).withValues(alpha: 0.0),
+        AppColors.backgroundWhite.withValues(alpha: 0.0),
       ],
     );
     paintFill.shader = gradient.createShader(Rect.fromLTWH(0, size.height * 0.5, size.width, size.height * 0.5));

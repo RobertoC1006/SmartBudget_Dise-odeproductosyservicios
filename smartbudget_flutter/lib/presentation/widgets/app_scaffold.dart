@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'bottom_nav_bar.dart';
-import '../../core/theme/app_colors.dart';
 
 class AppScaffold extends StatelessWidget {
   final int currentIndex;
@@ -15,7 +14,7 @@ class AppScaffold extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.backgroundWhite,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: body,
       bottomNavigationBar: BottomNavBar(
         currentIndex: currentIndex,

@@ -22,7 +22,7 @@ class AppTheme {
         color: AppColors.surfaceWhite,
         elevation: 0,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.all(Radius.circular(AppSpacing.radiusLg)),
+          borderRadius: BorderRadius.all(Radius.circular(AppSpacing.radiusXl)),
           side: BorderSide(color: AppColors.dividerGray, width: 1.0),
         ),
       ),
