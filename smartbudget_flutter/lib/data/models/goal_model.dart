@@ -31,14 +31,14 @@ class GoalModel {
   factory GoalModel.fromJson(Map<String, dynamic> json) {
     return GoalModel(
       id: json['id'],
-      userId: json['user_id'],
-      nombre: json['nombre'],
+      userId: json['user_id'] ?? 0,
+      nombre: json['nombre'] ?? '',
       descripcion: json['descripcion'],
-      montoObjetivo: (json['monto_objetivo'] as num).toDouble(),
-      saldoAcumulado: (json['saldo_acumulado'] as num).toDouble(),
+      montoObjetivo: json['monto_objetivo'] != null ? (json['monto_objetivo'] as num).toDouble() : 0.0,
+      saldoAcumulado: json['saldo_acumulado'] != null ? (json['saldo_acumulado'] as num).toDouble() : 0.0,
       fechaLimite: json['fecha_limite'] != null ? DateTime.parse(json['fecha_limite']) : null,
-      estado: _parseEstado(json['estado']),
-      createdAt: DateTime.parse(json['created_at']),
+      estado: _parseEstado(json['estado'] ?? 'pendiente'),
+      createdAt: json['created_at'] != null ? DateTime.parse(json['created_at']) : DateTime.now(),
     );
   }
 

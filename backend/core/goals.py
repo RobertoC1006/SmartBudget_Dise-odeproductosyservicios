@@ -122,10 +122,14 @@ def listar_metas_con_progreso(db: Session, user_id: int) -> list:
         porcentaje = (m.saldo_acumulado / m.monto_objetivo * 100) if m.monto_objetivo > 0 else 0
         resultado.append({
             "id": m.id,
+            "user_id": m.user_id,
             "nombre": m.nombre,
+            "descripcion": m.descripcion,
             "monto_objetivo": m.monto_objetivo,
             "saldo_acumulado": m.saldo_acumulado,
+            "fecha_limite": m.fecha_limite.isoformat() if m.fecha_limite else None,
             "estado": m.estado,
+            "created_at": m.created_at.isoformat() if m.created_at else None,
             "porcentaje": round(porcentaje, 2),
             "faltante": round(max(0, m.monto_objetivo - m.saldo_acumulado), 2)
         })
