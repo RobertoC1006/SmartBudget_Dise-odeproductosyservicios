@@ -539,11 +539,32 @@ class _GoalsScreenState extends State<GoalsScreen> {
     double? defaultAmount,
   }) {
     final formKey = GlobalKey<FormState>();
-    final nameController = TextEditingController(text: defaultName);
+    final nameController = TextEditingController();
     final amountController = TextEditingController(
       text: defaultAmount != null ? defaultAmount.toStringAsFixed(2) : '',
     );
+    
     int selectedIconIndex = 0;
+
+    // Detect category and pre-select based on defaultName if available
+    if (defaultName != null) {
+      final nameLower = defaultName.toLowerCase();
+      if (nameLower.contains('viaje') || nameLower.contains('vacaciones') || nameLower.contains('playa')) {
+        selectedIconIndex = 0;
+      } else if (nameLower.contains('casa') || nameLower.contains('hogar') || nameLower.contains('mueble') || nameLower.contains('depa')) {
+        selectedIconIndex = 1;
+      } else if (nameLower.contains('auto') || nameLower.contains('carro') || nameLower.contains('vehículo') || nameLower.contains('llanta')) {
+        selectedIconIndex = 2;
+      } else if (nameLower.contains('estudi') || nameLower.contains('universi') || nameLower.contains('curso') || nameLower.contains('educa') || nameLower.contains('laptop') || nameLower.contains('matrícula')) {
+        selectedIconIndex = 3;
+      } else if (nameLower.contains('salud') || nameLower.contains('emergencia') || nameLower.contains('médic') || nameLower.contains('dental') || nameLower.contains('dentista')) {
+        selectedIconIndex = 4;
+      } else {
+        selectedIconIndex = 5;
+      }
+      // Clean up special emojis and characters to show clean text
+      nameController.text = defaultName.replaceAll(RegExp(r'[^\w\s\dáéíóúÁÉÍÓÚñÑ]'), '').trim();
+    }
 
     final List<_IconItem> iconItems = const [
       _IconItem(name: 'Viaje', icon: LucideIcons.plane, emoji: '✈️'),
@@ -553,6 +574,46 @@ class _GoalsScreenState extends State<GoalsScreen> {
       _IconItem(name: 'Salud', icon: LucideIcons.heart, emoji: '❤️'),
       _IconItem(name: 'Otro', icon: LucideIcons.sparkles, emoji: '✨'),
     ];
+
+    // Smart recommendations map for each category index
+    final Map<int, List<String>> recommendations = {
+      0: [
+        'Vacaciones en Cancún',
+        'Eurotrip de aventura',
+        'Fin de semana de playa',
+        'Viaje familiar',
+      ],
+      1: [
+        'Inicial para mi depa',
+        'Remodelación de cocina',
+        'Juego de comedor',
+        'Pintar el departamento',
+      ],
+      2: [
+        'Cuota inicial del auto',
+        'Mantenimiento anual',
+        'Seguro vehicular',
+        'Llantas nuevas',
+      ],
+      3: [
+        'Ciclo de universidad',
+        'Curso de especialización',
+        'Libros y matrícula',
+        'Nueva Laptop',
+      ],
+      4: [
+        'Fondo de emergencias',
+        'Seguro médico anual',
+        'Tratamiento dental',
+        'Gimnasio y salud',
+      ],
+      5: [
+        'Regalos navideños',
+        'Entradas para concierto',
+        'Nueva tecnología',
+        'Ahorro imprevistos',
+      ],
+    };
 
     showDialog(
       context: context,
@@ -565,266 +626,388 @@ class _GoalsScreenState extends State<GoalsScreen> {
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(28),
               ),
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.fromLTRB(24, 12, 24, 24),
-                child: Form(
-                  key: formKey,
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // Close button (top right)
-                      Align(
-                        alignment: Alignment.topRight,
-                        child: IconButton(
-                          icon: const Icon(LucideIcons.x, size: 20),
-                          onPressed: () => Navigator.pop(context),
-                          color: AppColors.textSecondary,
-                        ),
-                      ),
-                      
-                      // Centered Title and Subtitle
-                      Center(
-                        child: Column(
-                          children: [
-                            Text(
-                              'Nueva Meta',
-                              style: GoogleFonts.inter(
-                                fontSize: 20,
-                                fontWeight: FontWeight.w800,
-                                color: const Color(0xFF1B5E20), // Dark green title color
+              child: Stack(
+                children: [
+                  SingleChildScrollView(
+                    padding: const EdgeInsets.fromLTRB(24, 24, 24, 24),
+                    child: Form(
+                      key: formKey,
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const SizedBox(height: 8),
+                          // Decorative target icon
+                          Center(
+                            child: Container(
+                              padding: const EdgeInsets.all(12),
+                              decoration: const BoxDecoration(
+                                color: Color(0xFFE2F3DA),
+                                shape: BoxShape.circle,
+                              ),
+                              child: const Icon(
+                                LucideIcons.target,
+                                color: Color(0xFF1B5E20),
+                                size: 28,
                               ),
                             ),
-                            const SizedBox(height: 6),
-                            Text(
-                              'Crea una meta de ahorro para alcanzar tus objetivos',
-                              style: GoogleFonts.inter(
-                                fontSize: 13,
-                                color: AppColors.textSecondary,
+                          ),
+                          const SizedBox(height: 14),
+                          
+                          // Centered Title and Subtitle
+                          Center(
+                            child: Column(
+                              children: [
+                                Text(
+                                  'Nueva Meta',
+                                  style: GoogleFonts.inter(
+                                    fontSize: 21,
+                                    fontWeight: FontWeight.w800,
+                                    color: const Color(0xFF1B5E20), // Dark green title color
+                                  ),
+                                ),
+                                const SizedBox(height: 6),
+                                Text(
+                                  'Crea una meta de ahorro para alcanzar tus objetivos',
+                                  style: GoogleFonts.inter(
+                                    fontSize: 13,
+                                    color: AppColors.textSecondary,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                  textAlign: TextAlign.center,
+                                ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(height: 24),
+    
+                          // 1. Nombre de la meta
+                          Text(
+                            'Nombre de la meta',
+                            style: GoogleFonts.inter(
+                              fontSize: 14,
+                              fontWeight: FontWeight.bold,
+                              color: const Color(0xFF1C2434),
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          TextFormField(
+                            controller: nameController,
+                            style: AppTextStyles.bodyMedium.copyWith(
+                              fontWeight: FontWeight.w600,
+                            ),
+                            decoration: InputDecoration(
+                              prefixIcon: const Icon(
+                                LucideIcons.tag,
+                                color: Color(0xFF80C29E),
+                                size: 18,
+                              ),
+                              hintText: 'Ej: Viaje a Europa',
+                              hintStyle: TextStyle(
+                                color: Colors.grey.shade400,
                                 fontWeight: FontWeight.w500,
                               ),
-                              textAlign: TextAlign.center,
-                            ),
-                          ],
-                        ),
-                      ),
-                      const SizedBox(height: 24),
-
-                      // 1. Nombre de la meta
-                      Text(
-                        'Nombre de la meta',
-                        style: GoogleFonts.inter(
-                          fontSize: 14,
-                          fontWeight: FontWeight.bold,
-                          color: const Color(0xFF1C2434),
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      TextFormField(
-                        controller: nameController,
-                        style: AppTextStyles.bodyMedium.copyWith(
-                          fontWeight: FontWeight.w600,
-                        ),
-                        decoration: InputDecoration(
-                          hintText: 'Ej: Viaje a Europa',
-                          hintStyle: TextStyle(
-                            color: Colors.grey.shade400,
-                            fontWeight: FontWeight.w500,
-                          ),
-                          fillColor: const Color(0xFFF3FAF2),
-                          filled: true,
-                          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(20),
-                            borderSide: const BorderSide(color: Color(0xFF80C29E), width: 1.5),
-                          ),
-                          enabledBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(20),
-                            borderSide: const BorderSide(color: Color(0xFF80C29E), width: 1.5),
-                          ),
-                          focusedBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(20),
-                            borderSide: const BorderSide(color: AppColors.primaryGreen, width: 2.0),
-                          ),
-                        ),
-                        validator: (value) =>
-                            value == null || value.trim().isEmpty
-                                ? 'Ingresa un nombre'
-                                : null,
-                      ),
-                      const SizedBox(height: 16),
-
-                      // 2. Monto objetivo (S/)
-                      Text(
-                        'Monto objetivo (S/)',
-                        style: GoogleFonts.inter(
-                          fontSize: 14,
-                          fontWeight: FontWeight.bold,
-                          color: const Color(0xFF1C2434),
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      TextFormField(
-                        controller: amountController,
-                        style: AppTextStyles.bodyMedium.copyWith(
-                          fontWeight: FontWeight.w600,
-                        ),
-                        keyboardType: const TextInputType.numberWithOptions(
-                          decimal: true,
-                        ),
-                        decoration: InputDecoration(
-                          hintText: '5000.00',
-                          hintStyle: TextStyle(
-                            color: Colors.grey.shade400,
-                            fontWeight: FontWeight.w500,
-                          ),
-                          fillColor: const Color(0xFFFAFEF9),
-                          filled: true,
-                          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(20),
-                            borderSide: const BorderSide(color: Color(0xFFF3FAF2)),
-                          ),
-                          enabledBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(20),
-                            borderSide: const BorderSide(color: Color(0xFFF3FAF2)),
-                          ),
-                          focusedBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(20),
-                            borderSide: const BorderSide(color: AppColors.primaryGreen, width: 1.5),
-                          ),
-                        ),
-                        validator: (value) {
-                          if (value == null || value.trim().isEmpty) {
-                            return 'Ingresa un monto';
-                          }
-                          final val = double.tryParse(value);
-                          if (val == null || val <= 0) {
-                            return 'Monto inválido';
-                          }
-                          return null;
-                        },
-                      ),
-                      const SizedBox(height: 16),
-
-                      // 3. Ícono selection
-                      Text(
-                        'Ícono',
-                        style: GoogleFonts.inter(
-                          fontSize: 14,
-                          fontWeight: FontWeight.bold,
-                          color: const Color(0xFF1C2434),
-                        ),
-                      ),
-                      const SizedBox(height: 12),
-                      
-                      // 3-column Grid for Icons
-                      GridView.builder(
-                        shrinkWrap: true,
-                        physics: const NeverScrollableScrollPhysics(),
-                        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                          crossAxisCount: 3,
-                          mainAxisSpacing: 10,
-                          crossAxisSpacing: 10,
-                          childAspectRatio: 1.15,
-                        ),
-                        itemCount: iconItems.length,
-                        itemBuilder: (context, index) {
-                          final item = iconItems[index];
-                          final isSelected = selectedIconIndex == index;
-
-                          return InkWell(
-                            onTap: () {
-                              setDialogState(() {
-                                selectedIconIndex = index;
-                              });
-                            },
-                            borderRadius: BorderRadius.circular(20),
-                            child: AnimatedContainer(
-                              duration: const Duration(milliseconds: 200),
-                              decoration: BoxDecoration(
-                                color: isSelected
-                                    ? const Color(0xFFE2F3DA) // Light green selected background
-                                    : const Color(0xFFFAFEF9),
+                              fillColor: const Color(0xFFF3FAF2),
+                              filled: true,
+                              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                              border: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(20),
-                                border: Border.all(
-                                  color: isSelected
-                                      ? AppColors.primaryGreen
-                                      : const Color(0xFFE2F3DA),
-                                  width: isSelected ? 1.8 : 1.0,
+                                borderSide: const BorderSide(color: Color(0xFF80C29E), width: 1.5),
+                              ),
+                              enabledBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(20),
+                                borderSide: const BorderSide(color: Color(0xFF80C29E), width: 1.5),
+                              ),
+                              focusedBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(20),
+                                borderSide: const BorderSide(color: AppColors.primaryGreen, width: 2.0),
+                              ),
+                            ),
+                            validator: (value) =>
+                                value == null || value.trim().isEmpty
+                                    ? 'Ingresa un nombre'
+                                    : null,
+                          ),
+                          const SizedBox(height: 10),
+
+                          // Dynamic Name Recommendations
+                          Row(
+                            children: [
+                              const Icon(LucideIcons.sparkles, size: 13, color: Color(0xFF80C29E)),
+                              const SizedBox(width: 4),
+                              Text(
+                                'Sugerencias:',
+                                style: GoogleFonts.inter(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.bold,
+                                  color: const Color(0xFF1B5E20),
                                 ),
                               ),
-                              child: Column(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  Icon(
-                                    item.icon,
-                                    color: isSelected
-                                        ? AppColors.primaryDark
-                                        : const Color(0xFF1C2434),
-                                    size: 20,
-                                  ),
-                                  const SizedBox(height: 6),
-                                  Text(
-                                    item.name,
-                                    style: GoogleFonts.inter(
-                                      fontSize: 11.5,
-                                      fontWeight: isSelected
-                                          ? FontWeight.w700
-                                          : FontWeight.w500,
+                            ],
+                          ),
+                          const SizedBox(height: 8),
+                          SizedBox(
+                            height: 34,
+                            child: ListView.builder(
+                              scrollDirection: Axis.horizontal,
+                              physics: const BouncingScrollPhysics(),
+                              itemCount: recommendations[selectedIconIndex]!.length,
+                              itemBuilder: (context, chipIndex) {
+                                final chipText = recommendations[selectedIconIndex]![chipIndex];
+                                final isSelected = nameController.text.trim() == chipText;
+                                return GestureDetector(
+                                  onTap: () {
+                                    setDialogState(() {
+                                      nameController.text = chipText;
+                                    });
+                                  },
+                                  child: AnimatedContainer(
+                                    duration: const Duration(milliseconds: 150),
+                                    margin: const EdgeInsets.only(right: 8),
+                                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                                    decoration: BoxDecoration(
                                       color: isSelected
-                                          ? AppColors.primaryDark
-                                          : AppColors.textSecondary,
+                                          ? const Color(0xFFE2F3DA)
+                                          : const Color(0xFFFAFEF9),
+                                      borderRadius: BorderRadius.circular(16),
+                                      border: Border.all(
+                                        color: isSelected
+                                            ? AppColors.primaryGreen
+                                            : const Color(0xFFE2F3DA),
+                                        width: isSelected ? 1.5 : 1.0,
+                                      ),
+                                      boxShadow: isSelected
+                                          ? [
+                                              BoxShadow(
+                                                color: AppColors.primaryGreen.withValues(alpha: 0.1),
+                                                blurRadius: 6,
+                                                offset: const Offset(0, 2),
+                                              ),
+                                            ]
+                                          : [],
+                                    ),
+                                    child: Text(
+                                      chipText,
+                                      style: GoogleFonts.inter(
+                                        fontSize: 11.5,
+                                        fontWeight: isSelected ? FontWeight.bold : FontWeight.w600,
+                                        color: isSelected ? AppColors.primaryDark : AppColors.textSecondary,
+                                      ),
                                     ),
                                   ),
-                                ],
+                                );
+                              },
+                            ),
+                          ),
+                          const SizedBox(height: 18),
+    
+                          // 2. Monto objetivo (S/)
+                          Text(
+                            'Monto objetivo (S/)',
+                            style: GoogleFonts.inter(
+                              fontSize: 14,
+                              fontWeight: FontWeight.bold,
+                              color: const Color(0xFF1C2434),
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          TextFormField(
+                            controller: amountController,
+                            style: AppTextStyles.bodyMedium.copyWith(
+                              fontWeight: FontWeight.w600,
+                            ),
+                            keyboardType: const TextInputType.numberWithOptions(
+                              decimal: true,
+                            ),
+                            decoration: InputDecoration(
+                              prefixIcon: const Icon(
+                                LucideIcons.coins,
+                                color: Color(0xFF80C29E),
+                                size: 18,
+                              ),
+                              hintText: '5000.00',
+                              hintStyle: TextStyle(
+                                color: Colors.grey.shade400,
+                                fontWeight: FontWeight.w500,
+                              ),
+                              fillColor: const Color(0xFFFAFEF9),
+                              filled: true,
+                              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(20),
+                                borderSide: const BorderSide(color: Color(0xFFF3FAF2)),
+                              ),
+                              enabledBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(20),
+                                borderSide: const BorderSide(color: Color(0xFFF3FAF2)),
+                              ),
+                              focusedBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(20),
+                                borderSide: const BorderSide(color: AppColors.primaryGreen, width: 1.5),
                               ),
                             ),
-                          );
-                        },
-                      ),
-
-                      const SizedBox(height: 24),
-                      // Guardar Button
-                      SizedBox(
-                        width: double.infinity,
-                        child: SBButton.primary(
-                          label: 'Crear Meta',
-                          onPressed: () async {
-                            if (formKey.currentState?.validate() ?? false) {
-                              final provider = context.read<GoalProvider>();
-                              
-                              // Append the selected emoji to the name to persist it
-                              final String finalName =
-                                  '${nameController.text.trim()} ${iconItems[selectedIconIndex].emoji}';
-                                  
-                              // Calculate a default date in background (e.g. 1 year from now) as date is optional in DB
-                              final DateTime defaultLimitDate =
-                                  DateTime.now().add(const Duration(days: 365));
-
-                              final success = await provider.createGoal(
-                                nombre: finalName,
-                                montoObjetivo:
-                                    double.parse(amountController.text.trim()),
-                                fechaLimite: defaultLimitDate,
-                              );
-                              if (success && context.mounted) {
-                                Navigator.pop(context);
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(
-                                    content: Text('Meta creada con éxito!'),
-                                  ),
-                                );
+                            validator: (value) {
+                              if (value == null || value.trim().isEmpty) {
+                                  return 'Ingresa un monto';
                               }
-                            }
-                          },
-                          customColor: const Color(0xFF26A69A), // Teal green color from mockup
-                          padding: const EdgeInsets.symmetric(vertical: 14),
+                              final val = double.tryParse(value);
+                              if (val == null || val <= 0) {
+                                return 'Monto inválido';
+                              }
+                              return null;
+                            },
+                          ),
+                          const SizedBox(height: 18),
+    
+                          // 3. Ícono selection
+                          Text(
+                            'Ícono',
+                            style: GoogleFonts.inter(
+                              fontSize: 14,
+                              fontWeight: FontWeight.bold,
+                              color: const Color(0xFF1C2434),
+                            ),
+                          ),
+                          const SizedBox(height: 12),
+                          
+                          // 3-column Grid for Icons
+                          GridView.builder(
+                            shrinkWrap: true,
+                            physics: const NeverScrollableScrollPhysics(),
+                            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                              crossAxisCount: 3,
+                              mainAxisSpacing: 10,
+                              crossAxisSpacing: 10,
+                              childAspectRatio: 1.15,
+                            ),
+                            itemCount: iconItems.length,
+                            itemBuilder: (context, index) {
+                              final item = iconItems[index];
+                              final isSelected = selectedIconIndex == index;
+    
+                              return InkWell(
+                                onTap: () {
+                                  setDialogState(() {
+                                    selectedIconIndex = index;
+                                  });
+                                },
+                                borderRadius: BorderRadius.circular(20),
+                                child: AnimatedContainer(
+                                  duration: const Duration(milliseconds: 200),
+                                  decoration: BoxDecoration(
+                                    color: isSelected
+                                        ? const Color(0xFFE2F3DA) // Light green selected background
+                                        : const Color(0xFFFAFEF9),
+                                    borderRadius: BorderRadius.circular(20),
+                                    border: Border.all(
+                                      color: isSelected
+                                          ? AppColors.primaryGreen
+                                          : const Color(0xFFE2F3DA),
+                                      width: isSelected ? 2.0 : 1.0,
+                                    ),
+                                    boxShadow: isSelected
+                                        ? [
+                                            BoxShadow(
+                                              color: AppColors.primaryGreen.withValues(alpha: 0.15),
+                                              blurRadius: 10,
+                                              offset: const Offset(0, 4),
+                                            ),
+                                          ]
+                                        : [],
+                                  ),
+                                  child: Column(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      Icon(
+                                        item.icon,
+                                        color: isSelected
+                                            ? AppColors.primaryDark
+                                            : const Color(0xFF1C2434),
+                                        size: 20,
+                                      ),
+                                      const SizedBox(height: 6),
+                                      Text(
+                                        item.name,
+                                        style: GoogleFonts.inter(
+                                          fontSize: 11.5,
+                                          fontWeight: isSelected
+                                              ? FontWeight.w700
+                                              : FontWeight.w500,
+                                          color: isSelected
+                                              ? AppColors.primaryDark
+                                              : AppColors.textSecondary,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              );
+                            },
+                          ),
+    
+                          const SizedBox(height: 24),
+                          // Guardar Button
+                          SizedBox(
+                            width: double.infinity,
+                            child: SBButton.primary(
+                              label: 'Crear Meta',
+                              onPressed: () async {
+                                if (formKey.currentState?.validate() ?? false) {
+                                  final provider = context.read<GoalProvider>();
+                                  
+                                  // Append the selected emoji to the name to persist it
+                                  final String finalName =
+                                      '${nameController.text.trim()} ${iconItems[selectedIconIndex].emoji}';
+                                      
+                                  // Calculate a default date in background (e.g. 1 year from now) as date is optional in DB
+                                  final DateTime defaultLimitDate =
+                                      DateTime.now().add(const Duration(days: 365));
+    
+                                  final success = await provider.createGoal(
+                                    nombre: finalName,
+                                    montoObjetivo:
+                                        double.parse(amountController.text.trim()),
+                                    fechaLimite: defaultLimitDate,
+                                  );
+                                  if (success && context.mounted) {
+                                    Navigator.pop(context);
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      const SnackBar(
+                                        content: Text('Meta creada con éxito!'),
+                                      ),
+                                    );
+                                  }
+                                }
+                              },
+                              customColor: const Color(0xFF26A69A), // Teal green color from mockup
+                              padding: const EdgeInsets.symmetric(vertical: 14),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  // Close button (positioned absolutely in top right)
+                  Positioned(
+                    right: 12,
+                    top: 12,
+                    child: GestureDetector(
+                      onTap: () => Navigator.pop(context),
+                      child: Container(
+                        padding: const EdgeInsets.all(6),
+                        decoration: BoxDecoration(
+                          color: Colors.grey.shade100,
+                          shape: BoxShape.circle,
+                        ),
+                        child: Icon(
+                          LucideIcons.x,
+                          size: 16,
+                          color: Colors.grey.shade600,
                         ),
                       ),
-                    ],
+                    ),
                   ),
-                ),
+                ],
               ),
             );
           },
