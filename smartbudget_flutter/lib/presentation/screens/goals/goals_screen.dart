@@ -543,8 +543,16 @@ class _GoalsScreenState extends State<GoalsScreen> {
     final amountController = TextEditingController(
       text: defaultAmount != null ? defaultAmount.toStringAsFixed(2) : '',
     );
-    DateTime? limitDate;
-    final dateController = TextEditingController();
+    int selectedIconIndex = 0;
+
+    final List<_IconItem> iconItems = const [
+      _IconItem(name: 'Viaje', icon: LucideIcons.plane, emoji: '✈️'),
+      _IconItem(name: 'Casa', icon: LucideIcons.home, emoji: '🏠'),
+      _IconItem(name: 'Auto', icon: LucideIcons.car, emoji: '🚗'),
+      _IconItem(name: 'Educación', icon: LucideIcons.graduationCap, emoji: '🎓'),
+      _IconItem(name: 'Salud', icon: LucideIcons.heart, emoji: '❤️'),
+      _IconItem(name: 'Otro', icon: LucideIcons.sparkles, emoji: '✨'),
+    ];
 
     showDialog(
       context: context,
@@ -558,61 +566,85 @@ class _GoalsScreenState extends State<GoalsScreen> {
                 borderRadius: BorderRadius.circular(28),
               ),
               child: SingleChildScrollView(
-                padding: const EdgeInsets.all(24),
+                padding: const EdgeInsets.fromLTRB(24, 12, 24, 24),
                 child: Form(
                   key: formKey,
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text(
-                            'Nueva meta',
-                            style: AppTextStyles.heading2.copyWith(
-                              fontWeight: FontWeight.w800,
-                              fontSize: 18,
-                              color: AppColors.textPrimary,
-                            ),
-                          ),
-                          IconButton(
-                            icon: const Icon(LucideIcons.x, size: 20),
-                            onPressed: () => Navigator.pop(context),
-                            color: AppColors.textSecondary,
-                          ),
-                        ],
+                      // Close button (top right)
+                      Align(
+                        alignment: Alignment.topRight,
+                        child: IconButton(
+                          icon: const Icon(LucideIcons.x, size: 20),
+                          onPressed: () => Navigator.pop(context),
+                          color: AppColors.textSecondary,
+                        ),
                       ),
-                      const SizedBox(height: 16),
-                      // Nombre
+                      
+                      // Centered Title and Subtitle
+                      Center(
+                        child: Column(
+                          children: [
+                            Text(
+                              'Nueva Meta',
+                              style: GoogleFonts.inter(
+                                fontSize: 20,
+                                fontWeight: FontWeight.w800,
+                                color: const Color(0xFF1B5E20), // Dark green title color
+                              ),
+                            ),
+                            const SizedBox(height: 6),
+                            Text(
+                              'Crea una meta de ahorro para alcanzar tus objetivos',
+                              style: GoogleFonts.inter(
+                                fontSize: 13,
+                                color: AppColors.textSecondary,
+                                fontWeight: FontWeight.w500,
+                              ),
+                              textAlign: TextAlign.center,
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 24),
+
+                      // 1. Nombre de la meta
                       Text(
                         'Nombre de la meta',
-                        style: AppTextStyles.bodyMedium.copyWith(
+                        style: GoogleFonts.inter(
+                          fontSize: 14,
                           fontWeight: FontWeight.bold,
-                          color: AppColors.textPrimary,
+                          color: const Color(0xFF1C2434),
                         ),
                       ),
                       const SizedBox(height: 8),
                       TextFormField(
                         controller: nameController,
-                        style: AppTextStyles.bodyMedium,
+                        style: AppTextStyles.bodyMedium.copyWith(
+                          fontWeight: FontWeight.w600,
+                        ),
                         decoration: InputDecoration(
-                          hintText: 'Ej. Vacaciones en Europa ✈️',
-                          hintStyle: TextStyle(color: Colors.grey.shade400, fontWeight: FontWeight.w500),
+                          hintText: 'Ej: Viaje a Europa',
+                          hintStyle: TextStyle(
+                            color: Colors.grey.shade400,
+                            fontWeight: FontWeight.w500,
+                          ),
                           fillColor: const Color(0xFFF3FAF2),
                           filled: true,
                           contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                           border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(16),
-                            borderSide: const BorderSide(color: Color(0xFFE5E7EB)),
+                            borderRadius: BorderRadius.circular(20),
+                            borderSide: const BorderSide(color: Color(0xFF80C29E), width: 1.5),
                           ),
                           enabledBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(16),
-                            borderSide: const BorderSide(color: Color(0xFFE5E7EB)),
+                            borderRadius: BorderRadius.circular(20),
+                            borderSide: const BorderSide(color: Color(0xFF80C29E), width: 1.5),
                           ),
                           focusedBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(16),
-                            borderSide: const BorderSide(color: AppColors.primaryGreen, width: 1.5),
+                            borderRadius: BorderRadius.circular(20),
+                            borderSide: const BorderSide(color: AppColors.primaryGreen, width: 2.0),
                           ),
                         ),
                         validator: (value) =>
@@ -621,37 +653,44 @@ class _GoalsScreenState extends State<GoalsScreen> {
                                 : null,
                       ),
                       const SizedBox(height: 16),
-                      // Monto Objetivo
+
+                      // 2. Monto objetivo (S/)
                       Text(
                         'Monto objetivo (S/)',
-                        style: AppTextStyles.bodyMedium.copyWith(
+                        style: GoogleFonts.inter(
+                          fontSize: 14,
                           fontWeight: FontWeight.bold,
-                          color: AppColors.textPrimary,
+                          color: const Color(0xFF1C2434),
                         ),
                       ),
                       const SizedBox(height: 8),
                       TextFormField(
                         controller: amountController,
-                        style: AppTextStyles.bodyMedium,
+                        style: AppTextStyles.bodyMedium.copyWith(
+                          fontWeight: FontWeight.w600,
+                        ),
                         keyboardType: const TextInputType.numberWithOptions(
                           decimal: true,
                         ),
                         decoration: InputDecoration(
-                          hintText: 'Ej. 6000.00',
-                          hintStyle: TextStyle(color: Colors.grey.shade400, fontWeight: FontWeight.w500),
-                          fillColor: const Color(0xFFF3FAF2),
+                          hintText: '5000.00',
+                          hintStyle: TextStyle(
+                            color: Colors.grey.shade400,
+                            fontWeight: FontWeight.w500,
+                          ),
+                          fillColor: const Color(0xFFFAFEF9),
                           filled: true,
                           contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                           border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(16),
-                            borderSide: const BorderSide(color: Color(0xFFE5E7EB)),
+                            borderRadius: BorderRadius.circular(20),
+                            borderSide: const BorderSide(color: Color(0xFFF3FAF2)),
                           ),
                           enabledBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(16),
-                            borderSide: const BorderSide(color: Color(0xFFE5E7EB)),
+                            borderRadius: BorderRadius.circular(20),
+                            borderSide: const BorderSide(color: Color(0xFFF3FAF2)),
                           ),
                           focusedBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(16),
+                            borderRadius: BorderRadius.circular(20),
                             borderSide: const BorderSide(color: AppColors.primaryGreen, width: 1.5),
                           ),
                         ),
@@ -667,82 +706,84 @@ class _GoalsScreenState extends State<GoalsScreen> {
                         },
                       ),
                       const SizedBox(height: 16),
-                      // Fecha límite
+
+                      // 3. Ícono selection
                       Text(
-                        'Fecha objetivo',
-                        style: AppTextStyles.bodyMedium.copyWith(
+                        'Ícono',
+                        style: GoogleFonts.inter(
+                          fontSize: 14,
                           fontWeight: FontWeight.bold,
-                          color: AppColors.textPrimary,
+                          color: const Color(0xFF1C2434),
                         ),
                       ),
-                      const SizedBox(height: 8),
-                      GestureDetector(
-                        onTap: () async {
-                          final picked = await showDatePicker(
-                            context: context,
-                            initialDate: DateTime.now().add(const Duration(days: 30)),
-                            firstDate: DateTime.now(),
-                            lastDate: DateTime(2035),
-                            locale: const Locale('es', 'ES'),
-                            builder: (context, child) {
-                              return Theme(
-                                data: Theme.of(context).copyWith(
-                                  colorScheme: const ColorScheme.light(
-                                    primary: AppColors.primaryGreen,
-                                    onPrimary: Colors.white,
-                                    onSurface: AppColors.textPrimary,
-                                  ),
-                                ),
-                                child: child!,
-                              );
+                      const SizedBox(height: 12),
+                      
+                      // 3-column Grid for Icons
+                      GridView.builder(
+                        shrinkWrap: true,
+                        physics: const NeverScrollableScrollPhysics(),
+                        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                          crossAxisCount: 3,
+                          mainAxisSpacing: 10,
+                          crossAxisSpacing: 10,
+                          childAspectRatio: 1.15,
+                        ),
+                        itemCount: iconItems.length,
+                        itemBuilder: (context, index) {
+                          final item = iconItems[index];
+                          final isSelected = selectedIconIndex == index;
+
+                          return InkWell(
+                            onTap: () {
+                              setDialogState(() {
+                                selectedIconIndex = index;
+                              });
                             },
-                          );
-                          if (picked != null) {
-                            setDialogState(() {
-                              limitDate = picked;
-                              dateController.text =
-                                  DateFormat("dd 'de' MMMM 'de' yyyy", 'es')
-                                      .format(picked);
-                            });
-                          }
-                        },
-                        child: AbsorbPointer(
-                          child: TextFormField(
-                            controller: dateController,
-                            style: AppTextStyles.bodyMedium,
-                            decoration: InputDecoration(
-                              hintText: 'Selecciona una fecha',
-                              hintStyle: TextStyle(color: Colors.grey.shade400, fontWeight: FontWeight.w500),
-                              fillColor: const Color(0xFFF3FAF2),
-                              filled: true,
-                              prefixIcon: const Icon(
-                                LucideIcons.calendar,
-                                color: AppColors.primaryGreen,
-                                size: 18,
+                            borderRadius: BorderRadius.circular(20),
+                            child: AnimatedContainer(
+                              duration: const Duration(milliseconds: 200),
+                              decoration: BoxDecoration(
+                                color: isSelected
+                                    ? const Color(0xFFE2F3DA) // Light green selected background
+                                    : const Color(0xFFFAFEF9),
+                                borderRadius: BorderRadius.circular(20),
+                                border: Border.all(
+                                  color: isSelected
+                                      ? AppColors.primaryGreen
+                                      : const Color(0xFFE2F3DA),
+                                  width: isSelected ? 1.8 : 1.0,
+                                ),
                               ),
-                              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-                              border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(16),
-                                borderSide:
-                                    const BorderSide(color: Color(0xFFE5E7EB)),
-                              ),
-                              enabledBorder: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(16),
-                                borderSide:
-                                    const BorderSide(color: Color(0xFFE5E7EB)),
-                              ),
-                              focusedBorder: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(16),
-                                borderSide: const BorderSide(color: AppColors.primaryGreen, width: 1.5),
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Icon(
+                                    item.icon,
+                                    color: isSelected
+                                        ? AppColors.primaryDark
+                                        : const Color(0xFF1C2434),
+                                    size: 20,
+                                  ),
+                                  const SizedBox(height: 6),
+                                  Text(
+                                    item.name,
+                                    style: GoogleFonts.inter(
+                                      fontSize: 11.5,
+                                      fontWeight: isSelected
+                                          ? FontWeight.w700
+                                          : FontWeight.w500,
+                                      color: isSelected
+                                          ? AppColors.primaryDark
+                                          : AppColors.textSecondary,
+                                    ),
+                                  ),
+                                ],
                               ),
                             ),
-                            validator: (value) =>
-                                value == null || value.isEmpty
-                                    ? 'Selecciona una fecha'
-                                    : null,
-                          ),
-                        ),
+                          );
+                        },
                       ),
+
                       const SizedBox(height: 24),
                       // Guardar Button
                       SizedBox(
@@ -752,11 +793,20 @@ class _GoalsScreenState extends State<GoalsScreen> {
                           onPressed: () async {
                             if (formKey.currentState?.validate() ?? false) {
                               final provider = context.read<GoalProvider>();
+                              
+                              // Append the selected emoji to the name to persist it
+                              final String finalName =
+                                  '${nameController.text.trim()} ${iconItems[selectedIconIndex].emoji}';
+                                  
+                              // Calculate a default date in background (e.g. 1 year from now) as date is optional in DB
+                              final DateTime defaultLimitDate =
+                                  DateTime.now().add(const Duration(days: 365));
+
                               final success = await provider.createGoal(
-                                nombre: nameController.text.trim(),
+                                nombre: finalName,
                                 montoObjetivo:
                                     double.parse(amountController.text.trim()),
-                                fechaLimite: limitDate,
+                                fechaLimite: defaultLimitDate,
                               );
                               if (success && context.mounted) {
                                 Navigator.pop(context);
@@ -768,7 +818,8 @@ class _GoalsScreenState extends State<GoalsScreen> {
                               }
                             }
                           },
-                          customColor: AppColors.primaryGreen,
+                          customColor: const Color(0xFF26A69A), // Teal green color from mockup
+                          padding: const EdgeInsets.symmetric(vertical: 14),
                         ),
                       ),
                     ],
@@ -930,4 +981,16 @@ class _GoalsScreenState extends State<GoalsScreen> {
       },
     );
   }
+}
+
+class _IconItem {
+  final String name;
+  final IconData icon;
+  final String emoji;
+
+  const _IconItem({
+    required this.name,
+    required this.icon,
+    required this.emoji,
+  });
 }
