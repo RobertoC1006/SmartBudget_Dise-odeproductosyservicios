@@ -25,6 +25,7 @@ import '../../widgets/smart_score_ring.dart';
 import '../../widgets/transaction_tile.dart';
 import '../../widgets/loading_shimmer.dart';
 import '../../widgets/sb_entrance_animation.dart';
+import '../../widgets/header_background_painter.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -66,18 +67,27 @@ class _DashboardScreenState extends State<DashboardScreen> {
       );
     }
 
-    if (!budgetProvider.hasBudget) {
+    if (budgetProvider.currentBudget == null) {
       return Scaffold(
         backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         body: SafeArea(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+          child: Stack(
             children: [
-              ScreenHeader(
-                title: '¡Hola, $userName! 👋',
-                subtitle: 'Configura tu mes',
+              Positioned.fill(
+                child: const CustomPaint(
+                  painter: HeaderBackgroundPainter(),
+                ),
               ),
-              Expanded(child: _buildEmptyBudgetState(context, budgetProvider)),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  ScreenHeader(
+                    title: '¡Hola, $userName! 👋',
+                    subtitle: 'Configura tu mes',
+                  ),
+                  Expanded(child: _buildEmptyBudgetState(context, budgetProvider)),
+                ],
+              ),
             ],
           ),
         ),
@@ -87,7 +97,16 @@ class _DashboardScreenState extends State<DashboardScreen> {
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: SafeArea(
-        child: _buildDashboardContent(context, budgetProvider, userName),
+        child: Stack(
+          children: [
+            Positioned.fill(
+              child: const CustomPaint(
+                painter: HeaderBackgroundPainter(),
+              ),
+            ),
+            _buildDashboardContent(context, budgetProvider, userName),
+          ],
+        ),
       ),
     );
   }

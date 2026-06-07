@@ -16,6 +16,7 @@ import '../../widgets/sb_button.dart';
 import '../../widgets/category_icon.dart';
 import '../../widgets/app_header.dart';
 import '../../widgets/sb_entrance_animation.dart';
+import '../../widgets/header_background_painter.dart';
 
 class ExpensesScreen extends StatefulWidget {
   final String? initialCategory;
@@ -403,38 +404,47 @@ class _ExpensesScreenState extends State<ExpensesScreen> {
     return Scaffold(
       backgroundColor: AppColors.backgroundWhite,
       body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(
-            horizontal: AppSpacing.lg,
-            vertical: AppSpacing.md,
-          ),
-          child: Form(
-            key: _formKey,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Header (with avatar image and notification bell)
-                const AppHeader(),
-
-                 const SizedBox(height: AppSpacing.sm),
-
-                // Card 1: Escanea tu boleta (Horizontal gradient style with 3D illustration)
-                _buildScannerCard(context).animateEntrance(),
-
-                const SizedBox(height: AppSpacing.xl),
-
-                // Divider: o registrar manualmente
-                _buildDivider().animateEntrance(delay: 100.ms),
-
-                const SizedBox(height: AppSpacing.xl),
-
-                // Card 2: Registro Manual form card (With premium visual feedback & inline date picker)
-                _buildManualRegistrationFormCard(context).animateEntrance(delay: 200.ms),
-
-                const SizedBox(height: AppSpacing.xl),
-              ],
+        child: Stack(
+          children: [
+            Positioned.fill(
+              child: const CustomPaint(
+                painter: HeaderBackgroundPainter(),
+              ),
             ),
-          ),
+            SingleChildScrollView(
+              padding: const EdgeInsets.symmetric(
+                horizontal: AppSpacing.md,
+                vertical: AppSpacing.sm,
+              ),
+              child: Form(
+                key: _formKey,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Header (with avatar image and notification bell)
+                    const AppHeader(),
+
+                     const SizedBox(height: AppSpacing.sm),
+
+                    // Card 1: Escanea tu boleta (Horizontal gradient style with 3D illustration)
+                    _buildScannerCard(context).animateEntrance(),
+
+                    const SizedBox(height: AppSpacing.xl),
+
+                    // Divider: o registrar manualmente
+                    _buildDivider().animateEntrance(delay: 100.ms),
+
+                    const SizedBox(height: AppSpacing.xl),
+
+                    // Card 2: Registro Manual form card (With premium visual feedback & inline date picker)
+                    _buildManualRegistrationFormCard(context).animateEntrance(delay: 200.ms),
+
+                    const SizedBox(height: AppSpacing.xl),
+                  ],
+                ),
+              ),
+            ),
+          ],
         ),
       ),
     );
