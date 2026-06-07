@@ -77,7 +77,14 @@ class AppRouter {
           ),
           GoRoute(
             path: '/expenses',
-            builder: (context, state) => const ExpensesScreen(),
+            builder: (context, state) {
+              final category = state.uri.queryParameters['category'];
+              final prefilledData = state.extra as Map<String, dynamic>?;
+              return ExpensesScreen(
+                initialCategory: category,
+                prefilledData: prefilledData,
+              );
+            },
           ),
           GoRoute(
             path: '/goals',
@@ -97,6 +104,18 @@ class AppRouter {
         path: '/expenses/scan',
         parentNavigatorKey: rootNavigatorKey, // Open scanner fullscreen above ShellRoute
         builder: (context, state) => const ScanReceiptScreen(),
+      ),
+      GoRoute(
+        path: '/expenses/add',
+        parentNavigatorKey: rootNavigatorKey, // Open manual expense form fullscreen above ShellRoute
+        builder: (context, state) {
+          final category = state.uri.queryParameters['category'];
+          final prefilledData = state.extra as Map<String, dynamic>?;
+          return ExpensesScreen(
+            initialCategory: category,
+            prefilledData: prefilledData,
+          );
+        },
       ),
     ],
   );

@@ -18,11 +18,13 @@ import '../../../data/services/expense_service.dart';
 import '../../widgets/screen_header.dart';
 import '../../widgets/sb_card.dart';
 import '../../widgets/sb_button.dart';
+import '../../widgets/app_header.dart';
 import '../../widgets/sb_text_field.dart';
 import '../../widgets/amount_display.dart';
 import '../../widgets/smart_score_ring.dart';
 import '../../widgets/transaction_tile.dart';
 import '../../widgets/loading_shimmer.dart';
+import '../../widgets/sb_entrance_animation.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -288,95 +290,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
         clipBehavior: Clip.none,
         children: [
           // Header (with avatar image and notification bell)
-          Padding(
-            padding: const EdgeInsets.only(
-              left: 8,
-              right: 16,
-              top: 12,
-              bottom: 16,
-            ),
-            child: Row(
-              crossAxisAlignment:
-                  CrossAxisAlignment.center, // Vertically center all elements
-              children: [
-                // Circular 3D Avatar (Slightly smaller, no border, shifted left, positioned hair)
-                Container(
-                  width: 52,
-                  height: 52,
-                  decoration: const BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: Color(0xFFE8F5E9),
-                  ),
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(26),
-                    child: Image.asset(
-                      'assets/images/avatar.png',
-                      fit: BoxFit.cover,
-                      alignment: const Alignment(
-                        0,
-                        -0.35,
-                      ), // Shift image content down slightly to show hair without rectangular clipping
-                      errorBuilder: (context, error, stackTrace) {
-                        return const Center(
-                          child: Icon(
-                            LucideIcons.user,
-                            color: AppColors.primaryGreen,
-                            size: 24,
-                          ),
-                        );
-                      },
-                    ),
-                  ),
-                ),
-                const SizedBox(width: AppSpacing.md),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Text(
-                        '¡Hola, $userName! 👋',
-                        style: GoogleFonts.inter(
-                          fontSize:
-                              20, // Adjusted font size to fit smaller avatar
-                          fontWeight: FontWeight.w800,
-                          color: const Color(0xFF1C2434),
-                        ),
-                      ),
-                      const SizedBox(height: 2),
-                    ],
-                  ),
-                ),
-                Stack(
-                  clipBehavior: Clip.none,
-                  children: [
-                    IconButton(
-                      icon: const Icon(
-                        LucideIcons.bell,
-                        color: AppColors.textPrimary,
-                        size: 24,
-                      ),
-                      onPressed: () =>
-                          _showNotificationsBottomSheet(context, provider),
-                    ),
-                    if (provider.activeAlerts.any((a) => !a.leida))
-                      Positioned(
-                        right: 8,
-                        top: 8,
-                        child: Container(
-                          width: 8,
-                          height: 8,
-                          decoration: const BoxDecoration(
-                            color: AppColors.expenseRed,
-                            shape: BoxShape.circle,
-                          ),
-                        ),
-                      ),
-                  ],
-                ),
-              ],
-            ),
-          ),
+          const AppHeader(),
 
           const SizedBox(height: AppSpacing.sm),
 
@@ -508,9 +422,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   ),
                 ],
               )
-              .animate()
-              .fade(duration: 400.ms)
-              .slideY(begin: 0.1, end: 0, curve: Curves.easeOutQuad),
+              .animateEntrance(slideOffset: 0.1),
 
           const SizedBox(height: AppSpacing.md),
 
@@ -700,9 +612,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   ),
                 ],
               )
-              .animate()
-              .fade(delay: 100.ms, duration: 400.ms)
-              .slideY(begin: 0.1, end: 0, curve: Curves.easeOutQuad),
+              .animateEntrance(delay: 100.ms, slideOffset: 0.1),
 
           const SizedBox(height: AppSpacing.md),
 
@@ -847,9 +757,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   ],
                 ),
               )
-              .animate()
-              .fade(delay: 200.ms, duration: 400.ms)
-              .slideY(begin: 0.1, end: 0, curve: Curves.easeOutQuad),
+              .animateEntrance(delay: 200.ms, slideOffset: 0.1),
 
           const SizedBox(height: AppSpacing.md),
 
@@ -995,9 +903,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   ],
                 ),
               )
-              .animate()
-              .fade(delay: 300.ms, duration: 400.ms)
-              .slideY(begin: 0.1, end: 0, curve: Curves.easeOutQuad),
+              .animateEntrance(delay: 300.ms, slideOffset: 0.1),
 
           const SizedBox(height: AppSpacing.md),
 
@@ -1113,9 +1019,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     ),
                 ],
               )
-              .animate()
-              .fade(delay: 400.ms, duration: 400.ms)
-              .slideY(begin: 0.1, end: 0, curve: Curves.easeOutQuad),
+              .animateEntrance(delay: 400.ms, slideOffset: 0.1),
 
           const SizedBox(height: AppSpacing.xl),
         ],
