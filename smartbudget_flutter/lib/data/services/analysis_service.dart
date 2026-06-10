@@ -41,4 +41,25 @@ class AnalysisService {
       throw Exception(message);
     }
   }
+
+  Future<SavingsProjectionResult> getSavingsProjection({
+    required String categoria,
+    required double gastoActualMensual,
+    required double gastoObjetivoMensual,
+  }) async {
+    try {
+      final response = await _apiClient.dio.post(
+        ApiEndpoints.savingsProjection,
+        data: {
+          'categoria': categoria,
+          'gasto_actual_mensual': gastoActualMensual,
+          'gasto_objetivo_mensual': gastoObjetivoMensual,
+        },
+      );
+      return SavingsProjectionResult.fromJson(response.data);
+    } on DioException catch (e) {
+      final message = e.response?.data['detail'] ?? 'Error al calcular la proyección de ahorro';
+      throw Exception(message);
+    }
+  }
 }

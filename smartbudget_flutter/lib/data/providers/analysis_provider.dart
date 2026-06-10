@@ -20,6 +20,15 @@ class AnalysisProvider extends ChangeNotifier {
   SimulationResult? _simulationResult;
   SimulationResult? get simulationResult => _simulationResult;
 
+  SavingsProjectionResult? _savingsProjection;
+  SavingsProjectionResult? get savingsProjection => _savingsProjection;
+
+  bool _isProjecting = false;
+  bool get isProjecting => _isProjecting;
+
+  String? _projectionError;
+  String? get projectionError => _projectionError;
+
   String? _errorMessage;
   String? get errorMessage => _errorMessage;
 
@@ -67,6 +76,36 @@ class AnalysisProvider extends ChangeNotifier {
   void clearSimulation() {
     _simulationResult = null;
     _errorMessage = null;
+    notifyListeners();
+  }
+
+  Future<void> runSavingsProjection({
+    required String categoria,
+    required double gastoActual,
+    required double gastoObjetivo,
+  }) async {
+    _isProjecting = true;
+    _projectionError = null;
+    _savingsProjection = null;
+    notifyListeners();
+
+    try {
+      _savingsProjection = await _analysisService.getSavingsProjection(
+        categoria: categoria,
+        gastoActualMensual: gastoActual,
+        gastoObjetivoMensual: gastoObjetivo,
+      );
+    } catch (e) {
+      _projectionError = e.toString().replaceAll('Exception: ', '');
+    } finally {
+      _isProjecting = false;
+      notifyListeners();
+    }
+  }
+
+  void clearSavingsProjection() {
+    _savingsProjection = null;
+    _projectionError = null;
     notifyListeners();
   }
 }

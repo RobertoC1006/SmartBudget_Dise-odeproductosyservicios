@@ -9,6 +9,8 @@ import '../../presentation/screens/expenses/scan_receipt_screen.dart';
 import '../../presentation/screens/goals/goals_screen.dart';
 import '../../presentation/screens/analysis/analysis_screen.dart';
 import '../../presentation/screens/profile/profile_screen.dart';
+import '../../presentation/screens/simulator/simulator_screen.dart';
+import '../../presentation/screens/simulator/micro_savings_screen.dart';
 import '../../presentation/widgets/app_scaffold.dart';
 
 class AppRouter {
@@ -61,7 +63,7 @@ class AppRouter {
             index = 2;
           } else if (location.startsWith('/analysis')) {
             index = 3;
-          } else if (location.startsWith('/profile')) {
+          } else if (location.startsWith('/simulator')) {
             index = 4;
           }
 
@@ -95,10 +97,19 @@ class AppRouter {
             builder: (context, state) => const AnalysisScreen(),
           ),
           GoRoute(
+            path: '/simulator',
+            builder: (context, state) => const SimulatorScreen(),
+          ),
+          GoRoute(
             path: '/profile',
             builder: (context, state) => const ProfileScreen(),
           ),
         ],
+      ),
+      GoRoute(
+        path: '/simulator/micro-ahorro',
+        parentNavigatorKey: rootNavigatorKey,
+        builder: (context, state) => const MicroSavingsScreen(),
       ),
       GoRoute(
         path: '/expenses/scan',

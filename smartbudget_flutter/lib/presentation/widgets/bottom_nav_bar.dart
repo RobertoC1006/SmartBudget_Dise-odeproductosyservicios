@@ -29,7 +29,7 @@ class BottomNavBar extends StatelessWidget {
         context.go('/analysis');
         break;
       case 4:
-        context.go('/profile');
+        context.go('/simulator');
         break;
     }
   }
@@ -41,7 +41,7 @@ class BottomNavBar extends StatelessWidget {
       _NavBarItem(icon: LucideIcons.creditCard, label: 'Gastos'),
       _NavBarItem(icon: LucideIcons.target, label: 'Metas'),
       _NavBarItem(icon: LucideIcons.barChart2, label: 'Análisis'),
-      _NavBarItem(icon: LucideIcons.user, label: 'Perfil'),
+      _NavBarItem(icon: LucideIcons.flaskConical, label: 'Simulador'),
     ];
 
     return SafeArea(

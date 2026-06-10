@@ -50,4 +50,5 @@ class ApiEndpoints {
 
   // Simulator
   static const String simulate = '/simulator/';
+  static const String savingsProjection = '/simulator/savings-projection/';
 }

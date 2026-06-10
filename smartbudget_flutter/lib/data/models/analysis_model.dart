@@ -24,6 +24,75 @@ class GoalImpact {
   }
 }
 
+// ─── Sim Fase 1: Micro-ahorro Progresivo ─────────────────────────────────────
+
+class MetaImpactoProjection {
+  final String nombre;
+  final double montoObjetivo;
+  final double saldoAcumulado;
+  final double faltante;
+  final double? mesesParaCompletar;
+  final double porcentajeCubierto12m;
+
+  MetaImpactoProjection({
+    required this.nombre,
+    required this.montoObjetivo,
+    required this.saldoAcumulado,
+    required this.faltante,
+    required this.mesesParaCompletar,
+    required this.porcentajeCubierto12m,
+  });
+
+  factory MetaImpactoProjection.fromJson(Map<String, dynamic> json) {
+    return MetaImpactoProjection(
+      nombre: json['nombre'] ?? '',
+      montoObjetivo: (json['monto_objetivo'] as num?)?.toDouble() ?? 0.0,
+      saldoAcumulado: (json['saldo_acumulado'] as num?)?.toDouble() ?? 0.0,
+      faltante: (json['faltante'] as num?)?.toDouble() ?? 0.0,
+      mesesParaCompletar: (json['meses_para_completar'] as num?)?.toDouble(),
+      porcentajeCubierto12m: (json['porcentaje_cubierto_12m'] as num?)?.toDouble() ?? 0.0,
+    );
+  }
+}
+
+class SavingsProjectionResult {
+  final String categoria;
+  final double ahorroMensual;
+  final double ahorroSemanal;
+  final double proyeccion3m;
+  final double proyeccion6m;
+  final double proyeccion12m;
+  final List<MetaImpactoProjection> metaImpacto;
+  final String mensaje;
+
+  SavingsProjectionResult({
+    required this.categoria,
+    required this.ahorroMensual,
+    required this.ahorroSemanal,
+    required this.proyeccion3m,
+    required this.proyeccion6m,
+    required this.proyeccion12m,
+    required this.metaImpacto,
+    required this.mensaje,
+  });
+
+  factory SavingsProjectionResult.fromJson(Map<String, dynamic> json) {
+    final list = json['meta_impacto'] as List? ?? [];
+    return SavingsProjectionResult(
+      categoria: json['categoria'] ?? '',
+      ahorroMensual: (json['ahorro_mensual'] as num?)?.toDouble() ?? 0.0,
+      ahorroSemanal: (json['ahorro_semanal'] as num?)?.toDouble() ?? 0.0,
+      proyeccion3m: (json['proyeccion_3m'] as num?)?.toDouble() ?? 0.0,
+      proyeccion6m: (json['proyeccion_6m'] as num?)?.toDouble() ?? 0.0,
+      proyeccion12m: (json['proyeccion_12m'] as num?)?.toDouble() ?? 0.0,
+      metaImpacto: list.map((i) => MetaImpactoProjection.fromJson(i)).toList(),
+      mensaje: json['mensaje'] ?? '',
+    );
+  }
+}
+
+// ─── Simulador de Compras (existente) ────────────────────────────────────────
+
 class SimulationResult {
   final bool compraViable;
   final double saldoProyectado;
