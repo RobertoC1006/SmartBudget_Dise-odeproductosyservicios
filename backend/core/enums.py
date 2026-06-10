@@ -75,6 +75,22 @@ class FuenteGasto(str, Enum):
     OCR_PDF = "ocr_pdf"
 
 
+class OcupacionUsuario(str, Enum):
+    """
+    Ocupación del usuario para personalizar escenarios del simulador.
+
+    Usada en:
+    - db/models.py → campo `ocupacion` de User
+    - api/schemas/auth.py → validación en registro y actualización de perfil
+    - api/routes/simulator.py → filtrar eventos de vida relevantes por ocupación
+    """
+    ESTUDIANTE = "estudiante"
+    TRABAJADOR_DEPENDIENTE = "trabajador_dependiente"
+    TRABAJADOR_INDEPENDIENTE = "trabajador_independiente"
+    EMPRENDEDOR = "emprendedor"
+    OTRO = "otro"
+
+
 class TipoAlerta(str, Enum):
     """
     Nivel de prioridad de una alerta del sistema.
