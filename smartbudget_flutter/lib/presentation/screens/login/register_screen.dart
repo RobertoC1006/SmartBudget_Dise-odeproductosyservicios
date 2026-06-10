@@ -6,6 +6,7 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_spacing.dart';
+import '../../../data/models/user_model.dart';
 import '../../../data/providers/auth_provider.dart';
 import '../../widgets/sb_button.dart';
 
@@ -24,6 +25,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
   final _confirmPasswordController = TextEditingController();
   bool _obscurePassword = true;
   bool _obscureConfirmPassword = true;
+  OcupacionUsuario? _selectedOcupacion;
 
   @override
   void dispose() {
@@ -51,6 +53,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
         _nameController.text.trim(),
         _emailController.text.trim(),
         _passwordController.text,
+        ocupacion: _selectedOcupacion,
       );
 
       if (success) {
@@ -457,7 +460,16 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           .animate()
                           .fade(delay: 300.ms, duration: 500.ms)
                           .slideY(begin: 0.1, end: 0, curve: Curves.easeOutQuad),
-                      const SizedBox(height: 32),
+                      const SizedBox(height: 24),
+                      // Occupation selector (optional)
+                      _OcupacionSelector(
+                        selected: _selectedOcupacion,
+                        onChanged: (v) => setState(() => _selectedOcupacion = v),
+                      )
+                          .animate()
+                          .fade(delay: 350.ms, duration: 500.ms)
+                          .slideY(begin: 0.1, end: 0, curve: Curves.easeOutQuad),
+                      const SizedBox(height: 28),
                       // Register Button (Dark charcoal rounded)
                       SBButton.primary(
                         label: 'Crear cuenta',
@@ -503,6 +515,89 @@ class _RegisterScreenState extends State<RegisterScreen> {
           ),
         ],
       ),
+    );
+  }
+}
+
+// ─── Selector de ocupación ────────────────────────────────────────────────────
+
+class _OcupacionSelector extends StatelessWidget {
+  const _OcupacionSelector({required this.selected, required this.onChanged});
+
+  final OcupacionUsuario? selected;
+  final ValueChanged<OcupacionUsuario?> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Text(
+              '¿A qué te dedicas?',
+              style: GoogleFonts.inter(
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+                color: const Color(0xFF1C2434),
+              ),
+            ),
+            const SizedBox(width: 6),
+            Text(
+              '(opcional)',
+              style: GoogleFonts.inter(
+                fontSize: 12,
+                color: const Color(0xFF8A94A6),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 12),
+        Wrap(
+          spacing: 8,
+          runSpacing: 8,
+          children: OcupacionUsuario.values.map((ocu) {
+            final isSelected = selected == ocu;
+            return GestureDetector(
+              onTap: () => onChanged(isSelected ? null : ocu),
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 200),
+                curve: Curves.easeOut,
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
+                decoration: BoxDecoration(
+                  color: isSelected
+                      ? const Color(0xFF7CC827).withValues(alpha: 0.1)
+                      : Colors.white,
+                  borderRadius: BorderRadius.circular(50),
+                  border: Border.all(
+                    color: isSelected
+                        ? const Color(0xFF7CC827)
+                        : const Color(0xFFE4E7EB),
+                    width: isSelected ? 1.5 : 1.0,
+                  ),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(ocu.emoji, style: const TextStyle(fontSize: 14)),
+                    const SizedBox(width: 6),
+                    Text(
+                      ocu.label,
+                      style: GoogleFonts.inter(
+                        fontSize: 13,
+                        fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
+                        color: isSelected
+                            ? const Color(0xFF5B9B1C)
+                            : const Color(0xFF5C6470),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          }).toList(),
+        ),
+      ],
     );
   }
 }

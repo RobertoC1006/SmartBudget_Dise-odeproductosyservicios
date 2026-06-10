@@ -8,14 +8,12 @@ class AuthService {
 
   Future<String> login(String email, String password) async {
     try {
-      final formData = FormData.fromMap({
-        'username': email,
-        'password': password,
-      });
-
       final response = await _apiClient.dio.post(
         ApiEndpoints.login,
-        data: formData,
+        data: {
+          'username': email,
+          'password': password,
+        },
         options: Options(
           contentType: Headers.formUrlEncodedContentType,
         ),
@@ -34,20 +32,32 @@ class AuthService {
     required String nombre,
     required String email,
     required String password,
+    String? ocupacion,
   }) async {
     try {
-      final response = await _apiClient.dio.post(
-        ApiEndpoints.register,
-        data: {
-          'nombre': nombre,
-          'email': email,
-          'password': password,
-        },
-      );
-
+      final body = {
+        'nombre': nombre,
+        'email': email,
+        'password': password,
+        ...?ocupacion != null ? {'ocupacion': ocupacion} : null,
+      };
+      final response = await _apiClient.dio.post(ApiEndpoints.register, data: body);
       return UserModel.fromJson(response.data);
     } on DioException catch (e) {
       final message = e.response?.data['detail'] ?? 'Error al registrar usuario';
+      throw Exception(message);
+    }
+  }
+
+  Future<UserModel> updateOcupacion(String ocupacion) async {
+    try {
+      final response = await _apiClient.dio.patch(
+        ApiEndpoints.updateMe,
+        data: {'ocupacion': ocupacion},
+      );
+      return UserModel.fromJson(response.data);
+    } on DioException catch (e) {
+      final message = e.response?.data['detail'] ?? 'Error al actualizar perfil';
       throw Exception(message);
     }
   }

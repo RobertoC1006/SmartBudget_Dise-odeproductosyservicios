@@ -16,6 +16,7 @@ class AuthProvider extends ChangeNotifier {
   bool get isAuthenticated => _isAuthenticated;
   UserModel? get user => _user;
   String? get errorMessage => _errorMessage;
+  OcupacionUsuario? get ocupacion => _user?.ocupacion;
 
   Future<void> checkAuth() async {
     _isLoading = true;
@@ -64,25 +65,38 @@ class AuthProvider extends ChangeNotifier {
     }
   }
 
-  Future<bool> register(String nombre, String email, String password) async {
+  Future<bool> register(
+    String nombre,
+    String email,
+    String password, {
+    OcupacionUsuario? ocupacion,
+  }) async {
     _isLoading = true;
     _errorMessage = null;
     notifyListeners();
 
     try {
-      // 1. Create the account
       await _authService.register(
         nombre: nombre,
         email: email,
         password: password,
+        ocupacion: ocupacion?.value,
       );
-      
-      // 2. Perform automatic login immediately after successful registration
       return await login(email, password);
     } catch (e) {
       _errorMessage = e.toString().replaceAll('Exception: ', '');
       _isLoading = false;
       notifyListeners();
+      return false;
+    }
+  }
+
+  Future<bool> updateOcupacion(OcupacionUsuario ocupacion) async {
+    try {
+      _user = await _authService.updateOcupacion(ocupacion.value);
+      notifyListeners();
+      return true;
+    } catch (_) {
       return false;
     }
   }

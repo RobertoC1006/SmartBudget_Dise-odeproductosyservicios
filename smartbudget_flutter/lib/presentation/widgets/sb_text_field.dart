@@ -16,6 +16,7 @@ class SBTextField extends StatefulWidget {
   final bool isCurrency;
   final bool readOnly;
   final VoidCallback? onTap;
+  final FocusNode? focusNode;
 
   const SBTextField({
     super.key,
@@ -31,6 +32,7 @@ class SBTextField extends StatefulWidget {
     this.isCurrency = false,
     this.readOnly = false,
     this.onTap,
+    this.focusNode,
   });
 
   factory SBTextField.email({
@@ -86,6 +88,7 @@ class SBTextField extends StatefulWidget {
   factory SBTextField.currency({
     Key? key,
     TextEditingController? controller,
+    FocusNode? focusNode,
     String? labelText = 'Monto',
     String? hintText = '0.00',
     String? Function(String?)? validator,
@@ -94,6 +97,7 @@ class SBTextField extends StatefulWidget {
     return SBTextField(
       key: key,
       controller: controller,
+      focusNode: focusNode,
       labelText: labelText,
       hintText: hintText,
       keyboardType: const TextInputType.numberWithOptions(decimal: true),
@@ -146,6 +150,7 @@ class _SBTextFieldState extends State<SBTextField> {
         ],
         TextFormField(
           controller: widget.controller,
+          focusNode: widget.focusNode,
           obscureText: widget.obscureText,
           keyboardType: widget.keyboardType,
           validator: widget.validator,
