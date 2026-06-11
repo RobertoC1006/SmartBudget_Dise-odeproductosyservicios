@@ -39,7 +39,7 @@ class _ScanReceiptScreenState extends State<ScanReceiptScreen> {
 
       if (file == null) return; // User cancelled
 
-      await _processReceipt(file.path);
+      await _processReceipt(file);
     } catch (e) {
       setState(() {
         _errorMessage = 'Error al acceder a la cámara o galería: ${e.toString()}';
@@ -47,13 +47,16 @@ class _ScanReceiptScreenState extends State<ScanReceiptScreen> {
     }
   }
 
-  Future<void> _processReceipt(String filePath) async {
+  Future<void> _processReceipt(XFile file) async {
     setState(() {
       _isProcessing = true;
       _statusMessage = 'Subiendo comprobante...';
     });
 
     try {
+      // En web no existe acceso al filesystem, así que se envían los bytes.
+      final bytes = await file.readAsBytes();
+
       // Simulate steps for better UX feel
       await Future.delayed(const Duration(milliseconds: 800));
       if (!mounted) return;
@@ -68,7 +71,11 @@ class _ScanReceiptScreenState extends State<ScanReceiptScreen> {
       });
 
       // Call API
-      final Map<String, dynamic> result = await _expenseService.scanReceipt(filePath);
+      final Map<String, dynamic> result = await _expenseService.scanReceipt(
+        bytes,
+        filename: file.name,
+        mimeType: file.mimeType,
+      );
 
       if (!mounted) return;
 

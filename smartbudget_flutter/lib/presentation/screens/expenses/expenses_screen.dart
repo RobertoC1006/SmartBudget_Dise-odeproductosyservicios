@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lucide_icons/lucide_icons.dart';
@@ -130,7 +131,8 @@ class _ExpensesScreenState extends State<ExpensesScreen> {
     if (widget.prefilledData != null) {
       final data = widget.prefilledData!;
       if (data['monto'] != null) {
-        _amountController.text = (data['monto'] as double).toStringAsFixed(2);
+        // El OCR puede devolver int o double.
+        _amountController.text = (data['monto'] as num).toStringAsFixed(2);
       }
       if (data['descripcion'] != null) {
         _descriptionController.text = data['descripcion'] as String;
@@ -139,9 +141,7 @@ class _ExpensesScreenState extends State<ExpensesScreen> {
         _comercio = data['comercio'] as String;
       }
       if (data['fecha'] != null) {
-        try {
-          _selectedDate = DateTime.parse(data['fecha'] as String);
-        } catch (_) {}
+        _selectedDate = _parseOcrDate(data['fecha'] as String) ?? _selectedDate;
       }
       if (data['categoria'] != null) {
         _selectedCategory = _parseCategoryString(data['categoria'] as String);
@@ -170,6 +170,19 @@ class _ExpensesScreenState extends State<ExpensesScreen> {
     _amountFocusNode.dispose();
     _descriptionFocusNode.dispose();
     super.dispose();
+  }
+
+  /// El OCR debería devolver YYYY-MM-DD, pero puede venir en formato local.
+  DateTime? _parseOcrDate(String raw) {
+    try {
+      return DateTime.parse(raw);
+    } catch (_) {}
+    for (final pattern in ['dd/MM/yyyy', 'dd-MM-yyyy']) {
+      try {
+        return DateFormat(pattern).parseStrict(raw);
+      } catch (_) {}
+    }
+    return null;
   }
 
   CategoriaGasto _parseCategoryString(String cat) {
@@ -332,7 +345,7 @@ class _ExpensesScreenState extends State<ExpensesScreen> {
       return;
     }
 
-    final double? monto = double.tryParse(amountText);
+    final double? monto = double.tryParse(amountText.replaceAll(',', '.'));
     if (monto == null || monto <= 0) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Monto inválido. Debe ser mayor a 0')),
@@ -698,12 +711,19 @@ class _ExpensesScreenState extends State<ExpensesScreen> {
   }
 
   Future<void> _selectCustomDate(BuildContext context) async {
+    final DateTime firstDate = DateTime(2020);
+    final DateTime lastDate = DateTime(2030);
+    // Si initialDate queda fuera del rango (p. ej. una fecha mal leída por el
+    // OCR), showDatePicker lanza una excepción y el calendario nunca se abre.
+    DateTime initialDate = _selectedDate;
+    if (initialDate.isBefore(firstDate)) initialDate = firstDate;
+    if (initialDate.isAfter(lastDate)) initialDate = lastDate;
+
     final DateTime? picked = await showDatePicker(
       context: context,
-      initialDate: _selectedDate,
-      firstDate: DateTime(2020),
-      lastDate: DateTime(2030),
-      locale: const Locale('es', 'ES'),
+      initialDate: initialDate,
+      firstDate: firstDate,
+      lastDate: lastDate,
       builder: (context, child) {
         return Theme(
           data: Theme.of(context).copyWith(
@@ -899,6 +919,16 @@ class _ExpensesScreenState extends State<ExpensesScreen> {
               keyboardType: const TextInputType.numberWithOptions(
                 decimal: true,
               ),
+              // En web/escritorio keyboardType no restringe el teclado,
+              // así que el formatter es la validación real.
+              inputFormatters: [
+                TextInputFormatter.withFunction((oldValue, newValue) {
+                  if (newValue.text.isEmpty) return newValue;
+                  final isValid =
+                      RegExp(r'^\d{0,7}([.,]\d{0,2})?$').hasMatch(newValue.text);
+                  return isValid ? newValue : oldValue;
+                }),
+              ],
               style: AppTextStyles.bodyMedium.copyWith(
                 fontWeight: FontWeight.w600,
                 color: AppColors.textPrimary,

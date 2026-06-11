@@ -42,8 +42,9 @@ class ExpenseModel {
 
   factory ExpenseModel.fromJson(Map<String, dynamic> json) {
     return ExpenseModel(
-      id: json['id'],
-      userId: json['user_id'],
+      id: json['id'] ?? 0,
+      // El backend no incluye user_id en ExpenseResponse.
+      userId: json['user_id'] ?? 0,
       categoria: _parseCategoria(json['categoria']),
       monto: (json['monto'] as num).toDouble(),
       descripcion: json['descripcion'],

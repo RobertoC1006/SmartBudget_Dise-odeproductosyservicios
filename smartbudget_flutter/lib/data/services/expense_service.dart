@@ -1,5 +1,7 @@
 // ignore_for_file: use_null_aware_elements
 
+import 'dart:typed_data';
+
 import 'package:dio/dio.dart';
 import '../../core/constants/api_endpoints.dart';
 import '../models/expense_model.dart';
@@ -47,10 +49,18 @@ class ExpenseService {
     }
   }
 
-  Future<Map<String, dynamic>> scanReceipt(String filePath) async {
+  Future<Map<String, dynamic>> scanReceipt(
+    Uint8List bytes, {
+    required String filename,
+    String? mimeType,
+  }) async {
     try {
       final formData = FormData.fromMap({
-        'file': await MultipartFile.fromFile(filePath),
+        'file': MultipartFile.fromBytes(
+          bytes,
+          filename: filename,
+          contentType: DioMediaType.parse(mimeType ?? _mimeFromFilename(filename)),
+        ),
       });
 
       final response = await _apiClient.dio.post(
@@ -62,6 +72,23 @@ class ExpenseService {
     } on DioException catch (e) {
       final message = e.response?.data['detail'] ?? 'Error al escanear comprobante';
       throw Exception(message);
+    }
+  }
+
+  // El backend reenvía el content-type al modelo de visión, por lo que no
+  // puede llegar como application/octet-stream.
+  String _mimeFromFilename(String filename) {
+    final ext = filename.split('.').last.toLowerCase();
+    switch (ext) {
+      case 'png':
+        return 'image/png';
+      case 'webp':
+        return 'image/webp';
+      case 'heic':
+      case 'heif':
+        return 'image/heic';
+      default:
+        return 'image/jpeg';
     }
   }
 }
