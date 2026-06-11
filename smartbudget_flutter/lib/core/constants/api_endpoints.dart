@@ -4,12 +4,20 @@ import 'package:flutter/foundation.dart';
 class ApiEndpoints {
   ApiEndpoints._();
 
+  /// IP del servidor, configurable al compilar para probar en un celular real:
+  /// flutter build apk --dart-define=API_HOST=192.168.1.14
+  static const String _apiHost = String.fromEnvironment('API_HOST');
+
   static String get baseUrl {
+    if (_apiHost.isNotEmpty) {
+      return 'http://$_apiHost:8002/api';
+    }
     if (kIsWeb) {
       return 'http://localhost:8002/api';
     }
     try {
       if (Platform.isAndroid) {
+        // Emulador de Android: 10.0.2.2 apunta al localhost de la PC
         return 'http://10.0.2.2:8002/api';
       }
     } catch (_) {

@@ -4,12 +4,19 @@ class CurrencyFormatter {
   CurrencyFormatter._();
 
   static String format(double amount) {
-    final formatter = NumberFormat.currency(locale: 'es_PE', symbol: 'S/ ', decimalDigits: 2);
-    return formatter.format(amount);
+    final isWhole = amount % 1 == 0;
+    return NumberFormat.currency(
+      locale: 'en_US',
+      symbol: 'S/ ',
+      decimalDigits: isWhole ? 0 : 2,
+    ).format(amount);
   }
 
   static String formatCompact(double amount) {
-    final formatter = NumberFormat.compactCurrency(locale: 'es_PE', symbol: 'S/ ', decimalDigits: 1);
-    return formatter.format(amount);
+    return NumberFormat.compactCurrency(
+      locale: 'en_US',
+      symbol: 'S/ ',
+      decimalDigits: 1,
+    ).format(amount);
   }
 }
