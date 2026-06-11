@@ -111,6 +111,23 @@ def retirar_de_meta(db: Session, user_id: int, goal_id: int, monto: float) -> Go
     db.refresh(goal)
     return goal
 
+def eliminar_meta(db: Session, user_id: int, goal_id: int) -> None:
+    """
+    Elimina una meta. Si tiene saldo acumulado, lo devuelve al presupuesto
+    activo para que el dinero reservado no se pierda.
+    """
+    goal = db.query(Goal).filter(Goal.id == goal_id, Goal.user_id == user_id).first()
+
+    if not goal:
+        raise MetaNoEncontradaError("La meta no existe o no te pertenece.")
+
+    if goal.saldo_acumulado > 0:
+        budget = obtener_presupuesto_activo(db, user_id)
+        budget.saldo_disponible += goal.saldo_acumulado
+
+    db.delete(goal)
+    db.commit()
+
 def listar_metas_con_progreso(db: Session, user_id: int) -> list:
     """
     Calcula el porcentaje de progreso para cada meta en tiempo real.

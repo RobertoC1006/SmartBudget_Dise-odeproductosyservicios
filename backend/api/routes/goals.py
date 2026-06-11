@@ -1,8 +1,8 @@
 from fastapi import APIRouter, Depends, HTTPException
 from api.schemas.goals import GoalCreate, GoalContribute
 from api.dependencies import get_db, get_current_user
-from core.goals import listar_metas_con_progreso, crear_meta, aportar_a_meta
-from core.exceptions import SaldoInsuficienteError
+from core.goals import listar_metas_con_progreso, crear_meta, aportar_a_meta, eliminar_meta
+from core.exceptions import SaldoInsuficienteError, MetaNoEncontradaError, PresupuestoNoEncontradoError
 # Intentar importar MetaLimiteError, pero si Roberto no lo puso, capturamos Exception genérico o creamos un workaround
 try:
     from core.exceptions import MetaLimiteError
@@ -28,3 +28,15 @@ def contribute_to_goal(goal_id: int, req: GoalContribute, db=Depends(get_db), us
         return aportar_a_meta(db, user.id, goal_id, req.monto)
     except SaldoInsuficienteError as e:
         raise HTTPException(status_code=422, detail=str(e))
+
+@router.delete("/{goal_id}", status_code=204)
+def delete_goal(goal_id: int, db=Depends(get_db), user=Depends(get_current_user)):
+    try:
+        eliminar_meta(db, user.id, goal_id)
+    except MetaNoEncontradaError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+    except PresupuestoNoEncontradoError:
+        raise HTTPException(
+            status_code=422,
+            detail="La meta tiene ahorro acumulado pero no hay un presupuesto activo donde devolverlo."
+        )

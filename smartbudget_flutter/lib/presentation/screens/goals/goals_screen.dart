@@ -921,7 +921,7 @@ class _GoalsScreenState extends State<GoalsScreen> {
   void _confirmDeleteGoal(BuildContext context, GoalModel goal) {
     showDialog(
       context: context,
-      builder: (context) {
+      builder: (dialogContext) {
         return AlertDialog(
           backgroundColor: AppColors.surfaceWhite,
           shape: RoundedRectangleBorder(
@@ -937,7 +937,7 @@ class _GoalsScreenState extends State<GoalsScreen> {
           ),
           actions: [
             TextButton(
-              onPressed: () => Navigator.pop(context),
+              onPressed: () => Navigator.pop(dialogContext),
               child: Text(
                 'Cancelar',
                 style: GoogleFonts.inter(
@@ -948,12 +948,19 @@ class _GoalsScreenState extends State<GoalsScreen> {
             ),
             TextButton(
               onPressed: () async {
-                Navigator.pop(context);
+                Navigator.pop(dialogContext);
                 final provider = context.read<GoalProvider>();
-                await provider.deleteGoal(goal.id);
+                final bool success = await provider.deleteGoal(goal.id);
                 if (context.mounted) {
                   ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Meta eliminada con éxito')),
+                    SnackBar(
+                      content: Text(
+                        success
+                            ? 'Meta eliminada con éxito'
+                            : provider.errorMessage ??
+                                'Error al eliminar la meta',
+                      ),
+                    ),
                   );
                 }
               },

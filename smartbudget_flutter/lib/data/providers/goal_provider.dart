@@ -81,15 +81,17 @@ class GoalProvider extends ChangeNotifier {
     }
   }
 
-  Future<void> deleteGoal(int goalId) async {
+  Future<bool> deleteGoal(int goalId) async {
     _isLoading = true;
     _errorMessage = null;
     notifyListeners();
     try {
       await _goalService.deleteGoal(goalId);
       await loadGoals();
+      return true;
     } catch (e) {
       _errorMessage = e.toString().replaceAll('Exception: ', '');
+      return false;
     } finally {
       _isLoading = false;
       notifyListeners();
