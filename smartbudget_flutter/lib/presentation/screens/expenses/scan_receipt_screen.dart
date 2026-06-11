@@ -79,8 +79,8 @@ class _ScanReceiptScreenState extends State<ScanReceiptScreen> {
 
       if (!mounted) return;
 
-      // Navigate to verify form
-      context.replace('/expenses', extra: result);
+      // Navigate to verify form (puente hasta la pantalla 1D de resultado)
+      context.replace('/expenses/add', extra: result);
     } catch (e) {
       setState(() {
         _errorMessage = e.toString().replaceAll('Exception: ', '');
@@ -114,7 +114,7 @@ class _ScanReceiptScreenState extends State<ScanReceiptScreen> {
       'comercio': 'El Hornero',
     };
 
-    context.replace('/expenses', extra: mockResult);
+    context.replace('/expenses/add', extra: mockResult);
   }
 
   @override

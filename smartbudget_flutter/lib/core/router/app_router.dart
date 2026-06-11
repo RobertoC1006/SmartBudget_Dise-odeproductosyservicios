@@ -5,6 +5,7 @@ import '../../presentation/screens/login/login_screen.dart';
 import '../../presentation/screens/login/register_screen.dart';
 import '../../presentation/screens/dashboard/dashboard_screen.dart';
 import '../../presentation/screens/expenses/expenses_screen.dart';
+import '../../presentation/screens/expenses/add_expense_screen.dart';
 import '../../presentation/screens/expenses/scan_receipt_screen.dart';
 import '../../presentation/screens/goals/goals_screen.dart';
 import '../../presentation/screens/analysis/analysis_screen.dart';
@@ -79,14 +80,8 @@ class AppRouter {
           ),
           GoRoute(
             path: '/expenses',
-            builder: (context, state) {
-              final category = state.uri.queryParameters['category'];
-              final prefilledData = state.extra as Map<String, dynamic>?;
-              return ExpensesScreen(
-                initialCategory: category,
-                prefilledData: prefilledData,
-              );
-            },
+            // Hub 1A: decisión entre escanear con OCR o registro manual.
+            builder: (context, state) => const ExpensesScreen(),
           ),
           GoRoute(
             path: '/goals',
@@ -122,7 +117,7 @@ class AppRouter {
         builder: (context, state) {
           final category = state.uri.queryParameters['category'];
           final prefilledData = state.extra as Map<String, dynamic>?;
-          return ExpensesScreen(
+          return AddExpenseScreen(
             initialCategory: category,
             prefilledData: prefilledData,
           );
