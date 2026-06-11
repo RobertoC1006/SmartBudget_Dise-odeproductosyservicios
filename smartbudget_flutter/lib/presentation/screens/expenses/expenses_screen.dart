@@ -34,9 +34,7 @@ class _ExpensesScreenState extends State<ExpensesScreen> {
         child: Stack(
           children: [
             Positioned.fill(
-              child: const CustomPaint(
-                painter: HeaderBackgroundPainter(),
-              ),
+              child: const CustomPaint(painter: HeaderBackgroundPainter()),
             ),
             SingleChildScrollView(
               padding: const EdgeInsets.symmetric(
@@ -50,13 +48,17 @@ class _ExpensesScreenState extends State<ExpensesScreen> {
 
                   const SizedBox(height: AppSpacing.md),
 
-                  Text(
-                    '¿Cómo quieres\nagregar tu gasto?',
-                    style: GoogleFonts.inter(
-                      fontSize: 26,
-                      fontWeight: FontWeight.w800,
-                      color: AppColors.textPrimary,
-                      height: 1.2,
+                  SizedBox(
+                    width: double.infinity,
+                    child: Text(
+                      '¿Cómo quieres agregar tu gasto?',
+                      textAlign: TextAlign.left,
+                      style: GoogleFonts.inter(
+                        fontSize: 26,
+                        fontWeight: FontWeight.w800,
+                        color: AppColors.textPrimary,
+                        height: 1.2,
+                      ),
                     ),
                   ).animateEntrance(),
 
@@ -84,7 +86,8 @@ class _ExpensesScreenState extends State<ExpensesScreen> {
   Widget _buildOcrCard(BuildContext context) {
     return Semantics(
       button: true,
-      label: 'Escanear boleta con OCR. Extrae monto, fecha, categoría y '
+      label:
+          'Escanear boleta con OCR. Extrae monto, fecha, categoría y '
           'descripción automáticamente.',
       child: _PressableCard(
         onTap: _goToScan,
@@ -100,23 +103,59 @@ class _ExpensesScreenState extends State<ExpensesScreen> {
             borderRadius: BorderRadius.circular(28),
             border: Border.all(color: AppColors.accentGreenBorder, width: 1.2),
           ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+          child: Stack(
+            clipBehavior: Clip.none,
             children: [
-              Text(
-                'Escanear boleta\ncon OCR',
-                style: GoogleFonts.inter(
-                  fontSize: 20,
-                  fontWeight: FontWeight.w800,
-                  color: AppColors.primaryDark,
-                  height: 1.25,
-                ),
+              // Boleta OCR anclada arriba a la derecha, a la altura del
+              // título (debajo del texto en el orden de pintado para que
+              // los textos siempre se lean).
+              Positioned(
+                top: -4,
+                right: -2,
+                child:
+                    Image.asset(
+                          'assets/images/ocr.png',
+                          width: 162,
+                          height: 212,
+                          fit: BoxFit.contain,
+                          errorBuilder: (context, error, stackTrace) {
+                            return const SizedBox(
+                              width: 162,
+                              height: 212,
+                              child: Icon(
+                                LucideIcons.scanLine,
+                                color: AppColors.primaryGreen,
+                                size: 48,
+                              ),
+                            );
+                          },
+                        )
+                        .animate(
+                          onPlay: (controller) =>
+                              controller.repeat(reverse: true),
+                        )
+                        .slideY(
+                          begin: -0.015,
+                          end: 0.015,
+                          duration: 2200.ms,
+                          curve: Curves.easeInOut,
+                        ),
               ),
-              const SizedBox(height: AppSpacing.md),
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.center,
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Expanded(
+                  Text(
+                    'Escanear boleta\ncon OCR',
+                    style: GoogleFonts.inter(
+                      fontSize: 20,
+                      fontWeight: FontWeight.w800,
+                      color: AppColors.primaryDark,
+                      height: 1.25,
+                    ),
+                  ),
+                  const SizedBox(height: AppSpacing.md),
+                  Padding(
+                    padding: const EdgeInsets.only(right: 156),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
@@ -138,31 +177,13 @@ class _ExpensesScreenState extends State<ExpensesScreen> {
                       ],
                     ),
                   ),
-                  const SizedBox(width: AppSpacing.sm),
-                  Image.asset(
-                    'assets/images/ocr.png',
-                    width: 148,
-                    height: 168,
-                    fit: BoxFit.contain,
-                    errorBuilder: (context, error, stackTrace) {
-                      return const SizedBox(
-                        width: 148,
-                        height: 168,
-                        child: Icon(
-                          LucideIcons.scanLine,
-                          color: AppColors.primaryGreen,
-                          size: 48,
-                        ),
-                      );
-                    },
+                  const SizedBox(height: AppSpacing.lg),
+                  _PillButton.primary(
+                    label: 'Escanear ahora',
+                    icon: LucideIcons.camera,
+                    onTap: _goToScan,
                   ),
                 ],
-              ),
-              const SizedBox(height: AppSpacing.lg),
-              _PillButton.primary(
-                label: 'Escanear ahora',
-                icon: LucideIcons.camera,
-                onTap: _goToScan,
               ),
             ],
           ),
@@ -177,7 +198,8 @@ class _ExpensesScreenState extends State<ExpensesScreen> {
   Widget _buildManualCard(BuildContext context) {
     return Semantics(
       button: true,
-      label: 'Registro manual. Agrega tu gasto manualmente en menos de '
+      label:
+          'Registro manual. Agrega tu gasto manualmente en menos de '
           '10 segundos.',
       child: _PressableCard(
         onTap: _goToManual,
@@ -214,6 +236,7 @@ class _ExpensesScreenState extends State<ExpensesScreen> {
                   Expanded(
                     child: Text(
                       'Agrega tu gasto manualmente en menos de 10 segundos.',
+                      textAlign: TextAlign.left,
                       style: AppTextStyles.bodySecondary.copyWith(
                         fontSize: 13.5,
                         height: 1.5,
@@ -222,22 +245,32 @@ class _ExpensesScreenState extends State<ExpensesScreen> {
                   ),
                   const SizedBox(width: AppSpacing.sm),
                   Image.asset(
-                    'assets/images/wallet_3d.png',
-                    width: 112,
-                    height: 104,
-                    fit: BoxFit.contain,
-                    errorBuilder: (context, error, stackTrace) {
-                      return const SizedBox(
-                        width: 112,
-                        height: 104,
-                        child: Icon(
-                          LucideIcons.wallet,
-                          color: AppColors.primaryGreen,
-                          size: 44,
-                        ),
-                      );
-                    },
-                  ),
+                        'assets/images/wallet_3d.png',
+                        width: 140,
+                        height: 130,
+                        fit: BoxFit.contain,
+                        errorBuilder: (context, error, stackTrace) {
+                          return const SizedBox(
+                            width: 140,
+                            height: 130,
+                            child: Icon(
+                              LucideIcons.wallet,
+                              color: AppColors.primaryGreen,
+                              size: 44,
+                            ),
+                          );
+                        },
+                      )
+                      .animate(
+                        onPlay: (controller) =>
+                            controller.repeat(reverse: true),
+                      )
+                      .slideY(
+                        begin: -0.02,
+                        end: 0.02,
+                        duration: 2600.ms,
+                        curve: Curves.easeInOut,
+                      ),
                 ],
               ),
               const SizedBox(height: AppSpacing.md),
@@ -264,11 +297,7 @@ class _CheckItem extends StatelessWidget {
   Widget build(BuildContext context) {
     return Row(
       children: [
-        const Icon(
-          LucideIcons.check,
-          color: AppColors.primaryGreen,
-          size: 16,
-        ),
+        const Icon(LucideIcons.check, color: AppColors.primaryGreen, size: 16),
         const SizedBox(width: AppSpacing.sm),
         Text(
           label,
@@ -329,20 +358,21 @@ class _PillButton extends StatelessWidget {
     required this.label,
     required this.onTap,
     this.icon,
-  })  : trailingIcon = null,
-        isPrimary = true;
+  }) : trailingIcon = null,
+       isPrimary = true;
 
   const _PillButton.outline({
     required this.label,
     required this.onTap,
     this.trailingIcon,
-  })  : icon = null,
-        isPrimary = false;
+  }) : icon = null,
+       isPrimary = false;
 
   @override
   Widget build(BuildContext context) {
-    final Color foreground =
-        isPrimary ? AppColors.surfaceWhite : AppColors.textPrimary;
+    final Color foreground = isPrimary
+        ? AppColors.surfaceWhite
+        : AppColors.textPrimary;
 
     return Material(
       color: isPrimary ? AppColors.primaryGreen : AppColors.surfaceWhite,
