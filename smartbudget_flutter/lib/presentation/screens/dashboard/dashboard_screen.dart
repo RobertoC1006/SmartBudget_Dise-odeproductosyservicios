@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lucide_icons/lucide_icons.dart';
@@ -281,6 +282,161 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
   }
 
+  void _showAddIncomeDialog(BuildContext context) {
+    final TextEditingController amountController = TextEditingController();
+    final TextEditingController descriptionController = TextEditingController();
+
+    showDialog(
+      context: context,
+      builder: (dialogContext) {
+        return AlertDialog(
+          backgroundColor: AppColors.surfaceWhite,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+          ),
+          title: Row(
+            children: [
+              Container(
+                width: 36,
+                height: 36,
+                decoration: const BoxDecoration(
+                  color: Color(0xFFF3FAF0),
+                  shape: BoxShape.circle,
+                ),
+                child: const Center(
+                  child: Icon(
+                    LucideIcons.trendingUp,
+                    color: Color(0xFF4C8C2B),
+                    size: 18,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 10),
+              Text(
+                'Agregar Ingreso',
+                style: GoogleFonts.inter(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 18,
+                ),
+              ),
+            ],
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Registra un ingreso extra de este mes (freelance, propina, regalo...). Se sumará a tu saldo disponible.',
+                style: AppTextStyles.bodySecondary,
+              ),
+              const SizedBox(height: AppSpacing.md),
+              TextField(
+                controller: amountController,
+                autofocus: true,
+                keyboardType: const TextInputType.numberWithOptions(
+                  decimal: true,
+                ),
+                inputFormatters: [
+                  TextInputFormatter.withFunction((oldValue, newValue) {
+                    if (newValue.text.isEmpty) return newValue;
+                    final isValid = RegExp(r'^\d{0,7}([.,]\d{0,2})?$')
+                        .hasMatch(newValue.text);
+                    return isValid ? newValue : oldValue;
+                  }),
+                ],
+                decoration: InputDecoration(
+                  labelText: 'Monto (S/)',
+                  hintText: 'Ej. 200.00',
+                  prefixIcon: const Icon(
+                    Icons.payments_outlined,
+                    color: AppColors.primaryGreen,
+                    size: 20,
+                  ),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                ),
+              ),
+              const SizedBox(height: AppSpacing.md),
+              TextField(
+                controller: descriptionController,
+                textCapitalization: TextCapitalization.sentences,
+                decoration: InputDecoration(
+                  labelText: 'Descripción (opcional)',
+                  hintText: 'Ej. Trabajo freelance',
+                  prefixIcon: const Icon(
+                    LucideIcons.edit3,
+                    color: AppColors.primaryGreen,
+                    size: 18,
+                  ),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                ),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext),
+              child: Text(
+                'Cancelar',
+                style: GoogleFonts.inter(
+                  color: AppColors.textSecondary,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+            TextButton(
+              onPressed: () async {
+                final double? monto = double.tryParse(
+                  amountController.text.trim().replaceAll(',', '.'),
+                );
+                if (monto == null || monto <= 0) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Por favor, ingresa un monto válido mayor a 0'),
+                    ),
+                  );
+                  return;
+                }
+
+                final String descripcion =
+                    descriptionController.text.trim().isEmpty
+                        ? 'Ingreso adicional'
+                        : descriptionController.text.trim();
+
+                Navigator.pop(dialogContext);
+                final provider = context.read<BudgetProvider>();
+                final bool success =
+                    await provider.registerIncome(monto, descripcion);
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(
+                        success
+                            ? '¡Ingreso registrado con éxito!'
+                            : provider.errorMessage ??
+                                'Error al registrar ingreso',
+                      ),
+                    ),
+                  );
+                }
+              },
+              child: Text(
+                'Agregar',
+                style: GoogleFonts.inter(
+                  color: AppColors.primaryGreen,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   Widget _buildDashboardContent(
     BuildContext context,
     BudgetProvider provider,
@@ -458,9 +614,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                         width: 1.0,
                       ),
                       padding: const EdgeInsets.all(12),
-                      onTap: () {
-                        // Action or navigate
-                      },
+                      onTap: () => _showAddIncomeDialog(context),
                       child: Row(
                         children: [
                           // Icon Left
@@ -518,7 +672,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                               ],
                             ),
                           ),
-                          // Arrow Right
+                          // Add income action
                           Container(
                             width: 20,
                             height: 20,
@@ -528,7 +682,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                             ),
                             child: const Center(
                               child: Icon(
-                                LucideIcons.arrowRight,
+                                LucideIcons.plus,
                                 color: Color(0xFF4C8C2B),
                                 size: 12,
                               ),

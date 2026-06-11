@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:go_router/go_router.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import 'package:google_fonts/google_fonts.dart';
 
@@ -30,29 +31,32 @@ class AppHeader extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          // Circular 3D Avatar (Slightly smaller, no border, shifted left, positioned hair)
-          Container(
-            width: 52,
-            height: 52,
-            decoration: const BoxDecoration(
-              shape: BoxShape.circle,
-              color: Color(0xFFE8F5E9),
-            ),
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(26),
-              child: Image.asset(
-                'assets/images/avatar.png',
-                fit: BoxFit.cover,
-                alignment: const Alignment(0, -0.35), // Shifts the face downwards slightly
-                errorBuilder: (context, error, stackTrace) {
-                  return const Center(
-                    child: Icon(
-                      LucideIcons.user,
-                      color: AppColors.primaryGreen,
-                      size: 24,
-                    ),
-                  );
-                },
+          // Circular 3D Avatar — tap to open profile
+          GestureDetector(
+            onTap: () => context.go('/profile'),
+            child: Container(
+              width: 52,
+              height: 52,
+              decoration: const BoxDecoration(
+                shape: BoxShape.circle,
+                color: Color(0xFFE8F5E9),
+              ),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(26),
+                child: Image.asset(
+                  'assets/images/avatar.png',
+                  fit: BoxFit.cover,
+                  alignment: const Alignment(0, -0.35), // Shifts the face downwards slightly
+                  errorBuilder: (context, error, stackTrace) {
+                    return const Center(
+                      child: Icon(
+                        LucideIcons.user,
+                        color: AppColors.primaryGreen,
+                        size: 24,
+                      ),
+                    );
+                  },
+                ),
               ),
             ),
           ),
