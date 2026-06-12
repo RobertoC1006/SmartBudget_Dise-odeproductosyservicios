@@ -221,8 +221,8 @@ class _ScanReceiptScreenState extends State<ScanReceiptScreen>
       await _completeRemainingSteps(session);
       if (!mounted || session != _processSession) return;
 
-      // Navigate to verify form (puente hasta la pantalla 1D de resultado)
-      context.replace('/expenses/add', extra: result);
+      // 1D: resultado del análisis con los campos extraídos editables.
+      context.replace('/expenses/scan/result', extra: result);
     } catch (e) {
       if (!mounted || session != _processSession) return;
       setState(() {
@@ -290,7 +290,7 @@ class _ScanReceiptScreenState extends State<ScanReceiptScreen>
       'comercio': 'El Hornero',
     };
 
-    context.replace('/expenses/add', extra: mockResult);
+    context.replace('/expenses/scan/result', extra: mockResult);
   }
 
   void _goBack() {
@@ -767,7 +767,7 @@ class _ScanReceiptScreenState extends State<ScanReceiptScreen>
                           child: Padding(
                             padding: const EdgeInsets.fromLTRB(
                               AppSpacing.lg,
-                              AppSpacing.sm,
+                              AppSpacing.xl,
                               AppSpacing.lg,
                               20,
                             ),
@@ -776,7 +776,7 @@ class _ScanReceiptScreenState extends State<ScanReceiptScreen>
                               children: [
                                 _buildProcessingTitleRow(),
 
-                                const SizedBox(height: AppSpacing.sm),
+                                const SizedBox(height: AppSpacing.xl),
 
                                 Center(
                                   child:
@@ -806,7 +806,17 @@ class _ScanReceiptScreenState extends State<ScanReceiptScreen>
                                             duration: 700.ms,
                                             curve: Curves.elasticOut,
                                           )
-                                          .fade(duration: 250.ms),
+                                          .fade(duration: 250.ms)
+                                          .animate(
+                                            onPlay: (controller) =>
+                                                controller.repeat(reverse: true),
+                                          )
+                                          .moveY(
+                                            begin: 0,
+                                            end: -10,
+                                            duration: 2000.ms,
+                                            curve: Curves.easeInOut,
+                                          ),
                                 ),
 
                                 const SizedBox(height: AppSpacing.md),

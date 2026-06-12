@@ -7,6 +7,7 @@ import '../../presentation/screens/dashboard/dashboard_screen.dart';
 import '../../presentation/screens/expenses/expenses_screen.dart';
 import '../../presentation/screens/expenses/add_expense_screen.dart';
 import '../../presentation/screens/expenses/scan_receipt_screen.dart';
+import '../../presentation/screens/expenses/scan_result_screen.dart';
 import '../../presentation/screens/expenses/expense_success_screen.dart';
 import '../../data/models/expense_model.dart';
 import '../../presentation/screens/goals/goals_screen.dart';
@@ -112,6 +113,19 @@ class AppRouter {
         path: '/expenses/scan',
         parentNavigatorKey: rootNavigatorKey, // Open scanner fullscreen above ShellRoute
         builder: (context, state) => const ScanReceiptScreen(),
+      ),
+      GoRoute(
+        path: '/expenses/scan/result',
+        // 1D: resultado del análisis OCR con campos editables.
+        parentNavigatorKey: rootNavigatorKey,
+        builder: (context, state) {
+          final data = state.extra as Map<String, dynamic>?;
+          if (data == null) {
+            // Acceso directo sin datos: volver a escanear.
+            return const ScanReceiptScreen();
+          }
+          return ScanResultScreen(scanData: data);
+        },
       ),
       GoRoute(
         path: '/expenses/add',
