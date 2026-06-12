@@ -11,7 +11,7 @@ from typing import List, Optional
 from sqlalchemy import String, ForeignKey, Numeric, Integer, Enum as SQLEnum, Text, Date, DateTime, func, UniqueConstraint, CheckConstraint
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 
-from core.enums import CategoriaGasto, EstadoMeta, FuenteGasto, TipoAlerta
+from core.enums import CategoriaGasto, EstadoMeta, FuenteGasto, TipoAlerta, OcupacionUsuario
 
 class Base(DeclarativeBase):
     """Clase base de la que heredan todos los modelos."""
@@ -24,6 +24,11 @@ class User(Base):
     nombre: Mapped[str] = mapped_column(String(100))
     email: Mapped[str] = mapped_column(String(150), unique=True, index=True)
     hashed_password: Mapped[str] = mapped_column(String(255))
+    ocupacion: Mapped[Optional[str]] = mapped_column(
+        SQLEnum(OcupacionUsuario, values_callable=lambda x: [e.value for e in x]),
+        nullable=True,
+        default=None,
+    )
     created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
 
     # Relaciones
