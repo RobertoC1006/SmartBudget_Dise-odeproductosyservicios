@@ -7,6 +7,8 @@ import '../../presentation/screens/dashboard/dashboard_screen.dart';
 import '../../presentation/screens/expenses/expenses_screen.dart';
 import '../../presentation/screens/expenses/add_expense_screen.dart';
 import '../../presentation/screens/expenses/scan_receipt_screen.dart';
+import '../../presentation/screens/expenses/expense_success_screen.dart';
+import '../../data/models/expense_model.dart';
 import '../../presentation/screens/goals/goals_screen.dart';
 import '../../presentation/screens/analysis/analysis_screen.dart';
 import '../../presentation/screens/profile/profile_screen.dart';
@@ -113,13 +115,33 @@ class AppRouter {
       ),
       GoRoute(
         path: '/expenses/add',
-        parentNavigatorKey: rootNavigatorKey, // Open manual expense form fullscreen above ShellRoute
+        // Fullscreen sobre el Shell; la pantalla añade su propio
+        // BottomNavBar + AppHeader (mismo patrón que micro-ahorro).
+        parentNavigatorKey: rootNavigatorKey,
         builder: (context, state) {
           final category = state.uri.queryParameters['category'];
           final prefilledData = state.extra as Map<String, dynamic>?;
           return AddExpenseScreen(
             initialCategory: category,
             prefilledData: prefilledData,
+          );
+        },
+      ),
+      GoRoute(
+        path: '/expenses/success',
+        // 2B: éxito compartido por las ramas manual y OCR.
+        parentNavigatorKey: rootNavigatorKey,
+        builder: (context, state) {
+          final data = state.extra as Map<String, dynamic>?;
+          final expense = data?['expense'] as ExpenseModel?;
+          if (expense == null) {
+            // Acceso directo sin gasto: regresar al hub.
+            return const ExpensesScreen();
+          }
+          return ExpenseSuccessScreen(
+            expense: expense,
+            prevScore: data?['prevScore'] as int?,
+            newScore: data?['newScore'] as int?,
           );
         },
       ),

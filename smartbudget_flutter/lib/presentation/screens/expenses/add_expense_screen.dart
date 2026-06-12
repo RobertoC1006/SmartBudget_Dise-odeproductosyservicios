@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lucide_icons/lucide_icons.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import 'package:intl/intl.dart';
 
 import '../../../core/theme/app_colors.dart';
@@ -11,9 +12,10 @@ import '../../../core/theme/app_text_styles.dart';
 import '../../../data/models/expense_model.dart';
 import '../../../data/providers/budget_provider.dart';
 import '../../../data/services/expense_service.dart';
-import '../../widgets/sb_button.dart';
 import '../../widgets/category_icon.dart';
 import '../../widgets/sb_entrance_animation.dart';
+import '../../widgets/app_header.dart';
+import '../../widgets/bottom_nav_bar.dart';
 import '../../widgets/header_background_painter.dart';
 
 /// Pantalla 2A del flujo de gastos: registro manual fullscreen.
@@ -44,6 +46,10 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
   FuenteGasto _fuente = FuenteGasto.manual;
   String? _comercio;
   bool _isSaving = false;
+
+  /// Controla el panel desplegable de categorías (overlay, no empuja
+  /// el contenido de abajo).
+  final MenuController _categoryMenuController = MenuController();
 
   final Map<CategoriaGasto, List<String>> _suggestionsByCategory = {
     CategoriaGasto.comida: [
@@ -217,118 +223,6 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
     }
   }
 
-  void _showCategorySelector(BuildContext context) {
-    showDialog(
-      context: context,
-      barrierDismissible: true,
-      builder: (context) {
-        return Dialog(
-          backgroundColor: AppColors.surfaceWhite,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(28),
-          ),
-          child: Padding(
-            padding: const EdgeInsets.all(20),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      'Selecciona una categoría',
-                      style: AppTextStyles.heading2.copyWith(
-                        fontWeight: FontWeight.w800,
-                        fontSize: 18,
-                        color: AppColors.textPrimary,
-                      ),
-                    ),
-                    IconButton(
-                      icon: const Icon(LucideIcons.x, size: 20),
-                      onPressed: () => Navigator.pop(context),
-                      color: AppColors.textSecondary,
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 16),
-                ConstrainedBox(
-                  constraints: BoxConstraints(
-                    maxHeight: MediaQuery.of(context).size.height * 0.5,
-                  ),
-                  child: GridView.builder(
-                    shrinkWrap: true,
-                    gridDelegate:
-                        const SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: 3,
-                      mainAxisSpacing: 12,
-                      crossAxisSpacing: 12,
-                      childAspectRatio: 0.95,
-                    ),
-                    itemCount: CategoriaGasto.values.length,
-                    itemBuilder: (context, index) {
-                      final category = CategoriaGasto.values[index];
-                      final isSelected = _selectedCategory == category;
-
-                      return InkWell(
-                        onTap: () {
-                          setState(() {
-                            _selectedCategory = category;
-                          });
-                          Navigator.pop(context);
-                        },
-                        borderRadius: BorderRadius.circular(20),
-                        child: AnimatedContainer(
-                          duration: const Duration(milliseconds: 200),
-                          decoration: BoxDecoration(
-                            color: isSelected
-                                ? AppColors.primaryLight
-                                : const Color(0xFFF9FBF9),
-                            borderRadius: BorderRadius.circular(20),
-                            border: Border.all(
-                              color: isSelected
-                                  ? AppColors.primaryGreen.withValues(alpha: 0.3)
-                                  : AppColors.dividerGray,
-                              width: isSelected ? 1.5 : 1.0,
-                            ),
-                          ),
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              CategoryIcon(
-                                category: category,
-                                size: 44,
-                                iconSize: 18,
-                              ),
-                              const SizedBox(height: 6),
-                              Text(
-                                _translateCategory(category),
-                                style: AppTextStyles.caption.copyWith(
-                                  fontWeight: isSelected
-                                      ? FontWeight.bold
-                                      : FontWeight.w600,
-                                  color: isSelected
-                                      ? AppColors.primaryDark
-                                      : AppColors.textPrimary,
-                                  fontSize: 12,
-                                ),
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ],
-                          ),
-                        ),
-                      );
-                    },
-                  ),
-                ),
-              ],
-            ),
-          ),
-        );
-      },
-    );
-  }
-
   Future<void> _saveExpense() async {
     if (_selectedCategory == null) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -373,26 +267,22 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
       );
 
       final budgetProvider = context.read<BudgetProvider>();
-      await _expenseService.createExpense(expense);
+      // Score previo para mostrar el delta real en la pantalla de éxito.
+      final int prevScore = budgetProvider.currentScore;
+
+      final created = await _expenseService.createExpense(expense);
       await budgetProvider.loadDashboard();
 
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('¡Gasto registrado con éxito!')),
-      );
+      final int newScore = budgetProvider.currentScore;
 
-      // Clean up the controllers/form state
-      _amountController.clear();
-      _descriptionController.clear();
-      setState(() {
-        _selectedCategory = null;
-        _comercio = null;
-        _selectedDate = DateTime.now();
-        _fuente = FuenteGasto.manual;
+      // 2B: pantalla de éxito compartida (reemplaza al formulario en el
+      // stack para que back nunca regrese a un form ya enviado).
+      context.pushReplacement('/expenses/success', extra: {
+        'expense': created,
+        'prevScore': prevScore,
+        'newScore': newScore,
       });
-
-      // Navigate back to Dashboard screen (route '/')
-      context.go('/');
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -420,53 +310,178 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
     }
   }
 
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppColors.backgroundWhite,
-      appBar: AppBar(
-        backgroundColor: AppColors.backgroundWhite,
-        surfaceTintColor: Colors.transparent,
-        elevation: 0,
-        centerTitle: true,
-        leading: IconButton(
+  /// Fila de título dentro del cuerpo (la pantalla no usa AppBar para
+  /// poder mostrar el AppHeader reutilizable encima, como micro-ahorro).
+  Widget _buildTitleRow(BuildContext context) {
+    return Row(
+      children: [
+        IconButton(
           icon: const Icon(
             LucideIcons.arrowLeft,
             color: AppColors.textPrimary,
             size: 22,
           ),
           tooltip: 'Volver',
+          visualDensity: VisualDensity.compact,
+          padding: EdgeInsets.zero,
           onPressed: _goBack,
         ),
-        title: Text(
-          'Registro manual',
-          style: AppTextStyles.heading2.copyWith(
-            fontSize: 18,
-            fontWeight: FontWeight.w700,
+        Expanded(
+          child: Text(
+            'Registro manual',
+            textAlign: TextAlign.center,
+            style: AppTextStyles.heading2.copyWith(
+              fontSize: 18,
+              fontWeight: FontWeight.w700,
+            ),
           ),
         ),
-      ),
+        IconButton(
+          icon: const Icon(
+            LucideIcons.helpCircle,
+            color: AppColors.textSecondary,
+            size: 22,
+          ),
+          tooltip: 'Ayuda',
+          visualDensity: VisualDensity.compact,
+          padding: EdgeInsets.zero,
+          onPressed: () => _showHelpDialog(context),
+        ),
+      ],
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: AppColors.backgroundWhite,
+      bottomNavigationBar: const BottomNavBar(currentIndex: 1),
       body: SafeArea(
         child: Stack(
           children: [
-            Positioned.fill(
-              child: const CustomPaint(
-                painter: HeaderBackgroundPainter(),
-              ),
+            const Positioned.fill(
+              child: CustomPaint(painter: HeaderBackgroundPainter()),
             ),
             SingleChildScrollView(
-              padding: const EdgeInsets.symmetric(
-                horizontal: AppSpacing.md,
-                vertical: AppSpacing.sm,
+              padding: const EdgeInsets.fromLTRB(
+                AppSpacing.lg,
+                0,
+                AppSpacing.lg,
+                20,
               ),
               child: Form(
                 key: _formKey,
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    _buildManualRegistrationFormCard(context)
-                        .animateEntrance(),
-                    const SizedBox(height: AppSpacing.xl),
+                    const AppHeader(),
+
+                    const SizedBox(height: AppSpacing.sm + 2),
+
+                    _buildTitleRow(context),
+
+                    const SizedBox(height: AppSpacing.sm + 2),
+
+                    Text(
+                      'Ingresa los detalles del gasto',
+                      style: AppTextStyles.bodySecondary.copyWith(
+                        fontSize: 14,
+                      ),
+                    ).animateEntrance(),
+
+                    const SizedBox(height: AppSpacing.md + 4),
+
+                    // 1. Categoría (primero, según mockup 2A)
+                    _buildSection(
+                      label: 'Categoría',
+                      child: _buildCategoryField(context),
+                    ).animateEntrance(delay: 50.ms),
+
+                    const SizedBox(height: AppSpacing.md),
+
+                    // 2. Monto + chips rápidos
+                    _buildSection(
+                      label: 'Monto (S/)',
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          _buildAmountField(),
+                          const SizedBox(height: 10),
+                          _buildQuickAmountChips(),
+                        ],
+                      ),
+                    ).animateEntrance(delay: 100.ms),
+
+                    const SizedBox(height: AppSpacing.md),
+
+                    // 3. Fecha
+                    _buildSection(
+                      label: 'Fecha',
+                      child: _buildDateSelectorField(),
+                    ).animateEntrance(delay: 150.ms),
+
+                    const SizedBox(height: AppSpacing.md),
+
+                    // 4. Descripción + sugerencias
+                    _buildSection(
+                      label: 'Descripción (opcional)',
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          _buildDescriptionField(),
+                          const SizedBox(height: 10),
+                          _buildDescriptionSuggestionChips(),
+                        ],
+                      ),
+                    ).animateEntrance(delay: 200.ms),
+
+                    const SizedBox(height: AppSpacing.md),
+
+                    SizedBox(
+                      width: double.infinity,
+                      height: 52,
+                      child: ElevatedButton(
+                        onPressed: _isSaving ? null : _saveExpense,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppColors.primaryGreen,
+                          disabledBackgroundColor:
+                              AppColors.primaryGreen.withValues(alpha: 0.6),
+                          elevation: 0,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(16),
+                          ),
+                        ),
+                        child: _isSaving
+                            ? const SizedBox(
+                                height: 20,
+                                width: 20,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  valueColor: AlwaysStoppedAnimation<Color>(
+                                    Colors.white,
+                                  ),
+                                ),
+                              )
+                            : Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  const Icon(
+                                    LucideIcons.plus,
+                                    color: Colors.white,
+                                    size: 18,
+                                  ),
+                                  const SizedBox(width: AppSpacing.sm),
+                                  Text(
+                                    'Agregar gasto',
+                                    style: AppTextStyles.label.copyWith(
+                                      color: Colors.white,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                      ),
+                    ).animateEntrance(delay: 250.ms),
                   ],
                 ),
               ),
@@ -485,6 +500,8 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
       duration: const Duration(milliseconds: 250),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(16),
+        // La sombra base ahora la lleva la tarjeta de sección; aquí solo
+        // queda el glow de enfoque.
         boxShadow: isFocused
             ? [
                 BoxShadow(
@@ -503,12 +520,12 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
     return GestureDetector(
       onTap: () => _selectCustomDate(context),
       child: Container(
+        height: 56,
         padding: const EdgeInsets.symmetric(
           horizontal: AppSpacing.md,
-          vertical: 14,
         ),
         decoration: BoxDecoration(
-          color: const Color(0xFFF3FAF2), // Pastel green background matching amount field
+          color: Colors.white,
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
             color: const Color(0xFFE5E7EB),
@@ -524,7 +541,7 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
             ),
             const SizedBox(width: 12),
             Text(
-              DateFormat("dd 'de' MMMM 'de' yyyy", 'es').format(_selectedDate),
+              _formatFecha(_selectedDate),
               style: AppTextStyles.bodyMedium.copyWith(
                 fontWeight: FontWeight.w600,
                 color: AppColors.textPrimary,
@@ -532,9 +549,9 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
             ),
             const Spacer(),
             Icon(
-              LucideIcons.edit2,
+              LucideIcons.chevronDown,
               color: Colors.grey.shade500,
-              size: 16,
+              size: 18,
             ),
           ],
         ),
@@ -589,7 +606,7 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
       children: quickAmounts.map((amount) {
         return Expanded(
           child: Padding(
-            padding: const EdgeInsets.only(right: 6.0),
+            padding: const EdgeInsets.only(right: 8.0),
             child: GestureDetector(
               onTap: () {
                 setState(() {
@@ -597,10 +614,11 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
                 });
               },
               child: Container(
-                padding: const EdgeInsets.symmetric(vertical: 8),
+                height: 40,
+                alignment: Alignment.center,
                 decoration: BoxDecoration(
                   color: Colors.white,
-                  borderRadius: BorderRadius.circular(10),
+                  borderRadius: BorderRadius.circular(12),
                   border: Border.all(
                     color: const Color(0xFFE5E7EB),
                     width: 1.0,
@@ -643,12 +661,12 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
               },
               child: Container(
                 padding: const EdgeInsets.symmetric(
-                  horizontal: 12,
-                  vertical: 8,
+                  horizontal: 14,
+                  vertical: 10,
                 ),
                 decoration: BoxDecoration(
                   color: Colors.white,
-                  borderRadius: BorderRadius.circular(10),
+                  borderRadius: BorderRadius.circular(12),
                   border: Border.all(
                     color: const Color(0xFFE5E7EB),
                     width: 1.0,
@@ -670,293 +688,413 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
     );
   }
 
-  Widget _buildManualRegistrationFormCard(BuildContext context) {
+  /// Fecha con prefijo relativo del mockup: "Hoy, 05 de junio de 2026".
+  String _formatFecha(DateTime date) {
+    final DateTime now = DateTime.now();
+    final DateTime today = DateTime(now.year, now.month, now.day);
+    final DateTime day = DateTime(date.year, date.month, date.day);
+    final String formatted =
+        DateFormat("dd 'de' MMMM 'de' yyyy", 'es').format(date);
+    if (day == today) return 'Hoy, $formatted';
+    if (day == today.subtract(const Duration(days: 1))) {
+      return 'Ayer, $formatted';
+    }
+    return formatted;
+  }
+
+  void _showHelpDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (context) {
+        return Dialog(
+          backgroundColor: AppColors.surfaceWhite,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(28),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      'Cómo registrar tu gasto',
+                      style: AppTextStyles.heading2.copyWith(
+                        fontWeight: FontWeight.w800,
+                        fontSize: 18,
+                      ),
+                    ),
+                    IconButton(
+                      icon: const Icon(LucideIcons.x, size: 20),
+                      onPressed: () => Navigator.pop(context),
+                      color: AppColors.textSecondary,
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                const _HelpTip(
+                  icon: LucideIcons.tag,
+                  text: 'Elige la categoría que mejor describa tu gasto.',
+                ),
+                const SizedBox(height: 12),
+                const _HelpTip(
+                  icon: LucideIcons.zap,
+                  text: 'Usa los montos rápidos para registrar en segundos.',
+                ),
+                const SizedBox(height: 12),
+                const _HelpTip(
+                  icon: LucideIcons.edit3,
+                  text:
+                      'La descripción es opcional, pero te ayuda a recordar '
+                      'en qué gastaste.',
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  /// Tarjeta blanca de sección del mockup 2A: label + campo dentro de
+  /// un contenedor elevado; el campo interior solo lleva borde.
+  Widget _buildSection({required String label, required Widget child}) {
     return Container(
-      padding: const EdgeInsets.all(AppSpacing.lg),
+      width: double.infinity,
+      padding: const EdgeInsets.all(AppSpacing.md),
       decoration: BoxDecoration(
         color: AppColors.surfaceWhite,
-        borderRadius: BorderRadius.circular(28),
-        border: Border.all(
-          color: const Color(
-            0xFFE8F5E9,
-          ), // Light green tint border to match Image 2
-          width: 1.5,
-        ),
+        borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.03),
-            blurRadius: 16,
-            offset: const Offset(0, 6),
+            color: Colors.black.withValues(alpha: 0.04),
+            blurRadius: 14,
+            offset: const Offset(0, 5),
           ),
         ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Header
-          Row(
-            children: [
-              Container(
-                width: 36,
-                height: 36,
-                decoration: const BoxDecoration(
-                  color: Color(0xFFE8F5E9), // Light green background
-                  shape: BoxShape.circle,
-                ),
-                child: const Center(
-                  child: Icon(
-                    Icons.add,
-                    color: AppColors.primaryGreen,
-                    size: 20,
+          Text(
+            label,
+            style: AppTextStyles.bodyMedium.copyWith(
+              fontSize: 15.5,
+              fontWeight: FontWeight.w700,
+              color: AppColors.textPrimary,
+            ),
+          ),
+          const SizedBox(height: 10),
+          child,
+        ],
+      ),
+    );
+  }
+
+  Widget _buildCategoryField(BuildContext context) {
+    final double panelWidth =
+        MediaQuery.of(context).size.width - AppSpacing.md * 2;
+
+    return MenuAnchor(
+      controller: _categoryMenuController,
+      alignmentOffset: const Offset(0, 6),
+      style: MenuStyle(
+        backgroundColor: const WidgetStatePropertyAll(Colors.white),
+        elevation: const WidgetStatePropertyAll(12),
+        shadowColor: WidgetStatePropertyAll(
+          Colors.black.withValues(alpha: 0.18),
+        ),
+        shape: WidgetStatePropertyAll(
+          RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        ),
+        padding: const WidgetStatePropertyAll(
+          EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+        ),
+      ),
+      menuChildren: [
+        // Lista de categorías (mismo estilo que el selector del
+        // simulador de micro-ahorro).
+        SizedBox(
+          width: panelWidth,
+          height: 320,
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: CategoriaGasto.values.map((category) {
+                final isSelected = _selectedCategory == category;
+                return GestureDetector(
+                  behavior: HitTestBehavior.opaque,
+                  onTap: () {
+                    setState(() {
+                      _selectedCategory = category;
+                    });
+                    _categoryMenuController.close();
+                  },
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 150),
+                    margin: const EdgeInsets.only(bottom: 2),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 10,
+                      vertical: 8,
+                    ),
+                    decoration: BoxDecoration(
+                      color: isSelected
+                          ? AppColors.primaryGreen.withValues(alpha: 0.10)
+                          : Colors.transparent,
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Row(
+                      children: [
+                        CategoryIcon(
+                          category: category,
+                          size: 28,
+                          iconSize: 13,
+                        ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: Text(
+                            _translateCategory(category),
+                            style: AppTextStyles.bodyMedium.copyWith(
+                              fontSize: 13,
+                              fontWeight: isSelected
+                                  ? FontWeight.w700
+                                  : FontWeight.w500,
+                              color: isSelected
+                                  ? AppColors.primaryDark
+                                  : AppColors.textPrimary,
+                            ),
+                          ),
+                        ),
+                        SizedBox(
+                          width: 14,
+                          child: isSelected
+                              ? const Icon(
+                                  LucideIcons.check,
+                                  size: 13,
+                                  color: AppColors.primaryGreen,
+                                )
+                              : null,
+                        ),
+                      ],
+                    ),
                   ),
-                ),
+                );
+              }).toList(),
+            ),
+          ),
+        ),
+      ],
+      builder: (context, controller, child) {
+        return GestureDetector(
+          onTap: () =>
+              controller.isOpen ? controller.close() : controller.open(),
+          child: Container(
+            height: 56,
+            padding: const EdgeInsets.symmetric(
+              horizontal: AppSpacing.md,
+            ),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(
+                color: _selectedCategory != null
+                    ? AppColors.primaryGreen.withValues(alpha: 0.3)
+                    : const Color(0xFFE5E7EB),
+                width: 1.0,
               ),
-              const SizedBox(width: 12),
+            ),
+            child: _buildCategoryFieldContent(),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildCategoryFieldContent() {
+    return Row(
+          children: [
+            if (_selectedCategory != null) ...[
+              CategoryIcon(
+                category: _selectedCategory!,
+                size: 24,
+                iconSize: 12,
+              ),
+              const SizedBox(width: 8),
               Text(
-                'Registro Manual',
-                style: AppTextStyles.heading2.copyWith(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w800,
+                _translateCategory(_selectedCategory!),
+                style: AppTextStyles.bodyMedium.copyWith(
+                  fontWeight: FontWeight.w600,
                   color: AppColors.textPrimary,
                 ),
               ),
+            ] else ...[
+              const Icon(
+                LucideIcons.tag,
+                color: AppColors.primaryGreen,
+                size: 20,
+              ),
+              const SizedBox(width: 12),
+              Text(
+                'Selecciona una categoría',
+                style: AppTextStyles.bodySecondary.copyWith(
+                  color: Colors.grey.shade500,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
             ],
-          ),
-          const SizedBox(height: 6),
-          Padding(
-            padding: const EdgeInsets.only(left: 4),
-            child: Text(
-              'Ingresa los detalles del gasto',
-              style: AppTextStyles.bodySecondary.copyWith(
-                fontSize: 13,
-                color: AppColors.textSecondary.withValues(alpha: 0.8),
-              ),
+            const Spacer(),
+            Icon(
+              LucideIcons.chevronDown,
+              color: Colors.grey.shade500,
+              size: 18,
             ),
-          ),
-          const SizedBox(height: AppSpacing.lg),
-          // 1. Monto Label & Input
-          Text(
-            'Monto (S/)',
-            style: AppTextStyles.bodyMedium.copyWith(
-              fontWeight: FontWeight.bold,
-              color: AppColors.textPrimary,
-            ),
-          ),
-          const SizedBox(height: AppSpacing.sm),
-          _buildGlowInputWrapper(
-            isFocused: _amountFocusNode.hasFocus,
-            child: TextFormField(
-              controller: _amountController,
-              focusNode: _amountFocusNode,
-              keyboardType: const TextInputType.numberWithOptions(
-                decimal: true,
-              ),
-              // En web/escritorio keyboardType no restringe el teclado,
-              // así que el formatter es la validación real.
-              inputFormatters: [
-                TextInputFormatter.withFunction((oldValue, newValue) {
-                  if (newValue.text.isEmpty) return newValue;
-                  final isValid =
-                      RegExp(r'^\d{0,7}([.,]\d{0,2})?$').hasMatch(newValue.text);
-                  return isValid ? newValue : oldValue;
-                }),
-              ],
-              style: AppTextStyles.bodyMedium.copyWith(
-                fontWeight: FontWeight.w600,
-                color: AppColors.textPrimary,
-              ),
-              decoration: InputDecoration(
-                prefixIcon: const Icon(
-                  Icons.payments_outlined,
-                  color: AppColors.primaryGreen,
-                  size: 20,
-                ),
-                hintText: '50.00',
-                hintStyle: TextStyle(
-                  color: Colors.grey.shade400,
-                  fontWeight: FontWeight.w500,
-                ),
-                fillColor: const Color(0xFFF3FAF2), // Pastel green background
-                filled: true,
-                contentPadding: const EdgeInsets.symmetric(
-                  horizontal: AppSpacing.md,
-                  vertical: 14,
-                ),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(16),
-                  borderSide: const BorderSide(color: Color(0xFFE5E7EB)),
-                ),
-                enabledBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(16),
-                  borderSide: const BorderSide(color: Color(0xFFE5E7EB)),
-                ),
-                focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(16),
-                  borderSide: const BorderSide(
-                    color: AppColors.primaryGreen,
-                    width: 1.5,
-                  ),
-                ),
-              ),
-            ),
-          ),
-          const SizedBox(height: 8),
-          _buildQuickAmountChips(),
+          ],
+    );
+  }
 
-          const SizedBox(height: AppSpacing.lg),
-
-          // 1b. Fecha del Gasto
-          Text(
-            'Fecha del Gasto',
-            style: AppTextStyles.bodyMedium.copyWith(
-              fontWeight: FontWeight.bold,
-              color: AppColors.textPrimary,
-            ),
-          ),
-          const SizedBox(height: AppSpacing.sm),
-          _buildDateSelectorField(),
-
-          const SizedBox(height: AppSpacing.lg),
-          // 2. Categoría Label & Selector
-          Text(
-            'Categoría',
-            style: AppTextStyles.bodyMedium.copyWith(
-              fontWeight: FontWeight.bold,
-              color: AppColors.textPrimary,
-            ),
-          ),
-          const SizedBox(height: AppSpacing.sm),
-          GestureDetector(
-            onTap: () => _showCategorySelector(context),
-            child: Container(
-              padding: const EdgeInsets.symmetric(
-                horizontal: AppSpacing.md,
-                vertical: 14,
-              ),
-              decoration: BoxDecoration(
-                color: const Color(
-                  0xFFF3FAF2,
-                ), // Pastel green background matching home widgets
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(
-                  color: _selectedCategory != null
-                      ? AppColors.primaryGreen.withValues(alpha: 0.3)
-                      : const Color(0xFFE5E7EB),
-                  width: 1.0,
-                ),
-              ),
-              child: Row(
-                children: [
-                  if (_selectedCategory != null) ...[
-                    CategoryIcon(
-                      category: _selectedCategory!,
-                      size: 24,
-                      iconSize: 12,
-                    ),
-                    const SizedBox(width: 8),
-                    Text(
-                      _translateCategory(_selectedCategory!),
-                      style: AppTextStyles.bodyMedium.copyWith(
-                        fontWeight: FontWeight.w600,
-                        color: AppColors.textPrimary,
-                      ),
-                    ),
-                  ] else ...[
-                    const Icon(
-                      LucideIcons.tag,
-                      color: AppColors.primaryGreen,
-                      size: 20,
-                    ),
-                    const SizedBox(width: 12),
-                    Text(
-                      'Selecciona una categoría',
-                      style: AppTextStyles.bodySecondary.copyWith(
-                        color: Colors.grey.shade500,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                  ],
-                  const Spacer(),
-                  Icon(
-                    LucideIcons.chevronDown,
-                    color: Colors.grey.shade500,
-                    size: 18,
-                  ),
-                ],
-              ),
-            ),
-          ),
-
-          const SizedBox(height: AppSpacing.lg),
-
-          // 3. Descripción Label & Input
-          Text(
-            'Descripción (opcional)',
-            style: AppTextStyles.bodyMedium.copyWith(
-              fontWeight: FontWeight.bold,
-              color: AppColors.textPrimary,
-            ),
-          ),
-          const SizedBox(height: AppSpacing.sm),
-          _buildGlowInputWrapper(
-            isFocused: _descriptionFocusNode.hasFocus,
-            child: TextFormField(
-              controller: _descriptionController,
-              focusNode: _descriptionFocusNode,
-              style: AppTextStyles.bodyMedium.copyWith(
-                color: AppColors.textPrimary,
-              ),
-              decoration: InputDecoration(
-                prefixIcon: const Icon(
-                  Icons.edit_note_rounded,
-                  color: AppColors.primaryGreen,
-                  size: 20,
-                ),
-                hintText: 'Ej: Almuerzo en restaurante',
-                hintStyle: TextStyle(
-                  color: Colors.grey.shade400,
-                  fontWeight: FontWeight.w500,
-                ),
-                fillColor: const Color(0xFFF3FAF2), // Pastel green background
-                filled: true,
-                contentPadding: const EdgeInsets.symmetric(
-                  horizontal: AppSpacing.md,
-                  vertical: 14,
-                ),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(16),
-                  borderSide: const BorderSide(color: Color(0xFFE5E7EB)),
-                ),
-                enabledBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(16),
-                  borderSide: const BorderSide(color: Color(0xFFE5E7EB)),
-                ),
-                focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(16),
-                  borderSide: const BorderSide(
-                    color: AppColors.primaryGreen,
-                    width: 1.5,
-                  ),
-                ),
-              ),
-            ),
-          ),
-          const SizedBox(height: 8),
-          _buildDescriptionSuggestionChips(),
-
-          const SizedBox(height: AppSpacing.lg),
-
-          // 4. Agregar Gasto Button
-          SBButton.primary(
-            label: _isSaving ? 'Guardando...' : 'Agregar Gasto',
-            icon: LucideIcons.plus,
-            isLoading: _isSaving,
-            onPressed: _isSaving ? null : _saveExpense,
-            customColor: AppColors.primaryGreen,
-            padding: const EdgeInsets.symmetric(vertical: 14),
-          ),
+  Widget _buildAmountField() {
+    return _buildGlowInputWrapper(
+      isFocused: _amountFocusNode.hasFocus,
+      child: TextFormField(
+        controller: _amountController,
+        focusNode: _amountFocusNode,
+        keyboardType: const TextInputType.numberWithOptions(
+          decimal: true,
+        ),
+        // En web/escritorio keyboardType no restringe el teclado,
+        // así que el formatter es la validación real.
+        inputFormatters: [
+          TextInputFormatter.withFunction((oldValue, newValue) {
+            if (newValue.text.isEmpty) return newValue;
+            final isValid =
+                RegExp(r'^\d{0,7}([.,]\d{0,2})?$').hasMatch(newValue.text);
+            return isValid ? newValue : oldValue;
+          }),
         ],
+        style: AppTextStyles.bodyMedium.copyWith(
+          fontSize: 20,
+          fontWeight: FontWeight.w700,
+          color: AppColors.textPrimary,
+        ),
+        decoration: InputDecoration(
+          // Mockup 2A: monto protagonista "S/ 50.00", sin ícono.
+          prefixText: 'S/ ',
+          prefixStyle: AppTextStyles.bodyMedium.copyWith(
+            fontSize: 20,
+            fontWeight: FontWeight.w700,
+            color: AppColors.textPrimary,
+          ),
+          hintText: '50.00',
+          hintStyle: TextStyle(
+            color: Colors.grey.shade400,
+            fontSize: 20,
+            fontWeight: FontWeight.w600,
+          ),
+          fillColor: Colors.white,
+          filled: true,
+          contentPadding: const EdgeInsets.symmetric(
+            horizontal: AppSpacing.md,
+            vertical: 14,
+          ),
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(16),
+            borderSide: const BorderSide(color: Color(0xFFE5E7EB)),
+          ),
+          enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(16),
+            borderSide: const BorderSide(color: Color(0xFFE5E7EB)),
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(16),
+            borderSide: const BorderSide(
+              color: AppColors.primaryGreen,
+              width: 1.5,
+            ),
+          ),
+        ),
       ),
+    );
+  }
+
+  Widget _buildDescriptionField() {
+    return _buildGlowInputWrapper(
+      isFocused: _descriptionFocusNode.hasFocus,
+      child: TextFormField(
+        controller: _descriptionController,
+        focusNode: _descriptionFocusNode,
+        maxLines: 3,
+        style: AppTextStyles.bodyMedium.copyWith(
+          color: AppColors.textPrimary,
+        ),
+        decoration: InputDecoration(
+          hintText: 'Ej: Almuerzo en restaurante',
+          hintStyle: TextStyle(
+            color: Colors.grey.shade400,
+            fontWeight: FontWeight.w500,
+          ),
+          fillColor: Colors.white,
+          filled: true,
+          isDense: true,
+          contentPadding: const EdgeInsets.symmetric(
+            horizontal: AppSpacing.md,
+            vertical: 12,
+          ),
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(16),
+            borderSide: const BorderSide(color: Color(0xFFE5E7EB)),
+          ),
+          enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(16),
+            borderSide: const BorderSide(color: Color(0xFFE5E7EB)),
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(16),
+            borderSide: const BorderSide(
+              color: AppColors.primaryGreen,
+              width: 1.5,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Fila de consejo del diálogo de ayuda.
+class _HelpTip extends StatelessWidget {
+  final IconData icon;
+  final String text;
+
+  const _HelpTip({required this.icon, required this.text});
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Container(
+          width: 32,
+          height: 32,
+          decoration: const BoxDecoration(
+            color: AppColors.primaryLight,
+            shape: BoxShape.circle,
+          ),
+          child: Icon(icon, color: AppColors.primaryGreen, size: 16),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Text(
+            text,
+            style: AppTextStyles.bodySecondary.copyWith(
+              fontSize: 13,
+              height: 1.4,
+            ),
+          ),
+        ),
+      ],
     );
   }
 }
