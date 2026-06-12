@@ -14,6 +14,7 @@ import '../../../core/theme/app_text_styles.dart';
 import '../../../data/models/expense_model.dart';
 import '../../../data/providers/budget_provider.dart';
 import '../../../data/services/expense_service.dart';
+import '../../widgets/app_header.dart';
 import '../../widgets/category_icon.dart';
 import '../../widgets/bottom_nav_bar.dart';
 import '../../widgets/header_background_painter.dart';
@@ -159,103 +160,128 @@ class _ExpenseSuccessScreenState extends State<ExpenseSuccessScreen> {
               const Positioned.fill(
                 child: CustomPaint(painter: HeaderBackgroundPainter()),
               ),
-              SingleChildScrollView(
-                padding: const EdgeInsets.fromLTRB(
-                  AppSpacing.lg,
-                  AppSpacing.sm,
-                  AppSpacing.lg,
-                  20,
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    Center(
-                      child:
-                          Image.asset(
-                                'assets/images/gasto_registrado.png',
-                                width: 170,
-                                height: 160,
-                                fit: BoxFit.contain,
-                                errorBuilder: (context, error, stackTrace) {
-                                  return const SizedBox(
-                                    width: 170,
-                                    height: 160,
-                                    child: Icon(
-                                      LucideIcons.checkCircle2,
-                                      color: AppColors.primaryGreen,
-                                      size: 72,
-                                    ),
-                                  );
-                                },
-                              )
-                              .animate()
-                              .scale(
-                                begin: const Offset(0.5, 0.5),
-                                end: const Offset(1, 1),
-                                duration: 700.ms,
-                                curve: Curves.elasticOut,
-                              )
-                              .fade(duration: 250.ms),
+              // El contenido ocupa como mínimo todo el alto disponible:
+              // el Spacer previo a los CTA absorbe el sobrante, de modo
+              // que los botones quedan anclados a 20px del bottom nav.
+              LayoutBuilder(
+                builder: (context, viewport) {
+                  return SingleChildScrollView(
+                    child: ConstrainedBox(
+                      constraints: BoxConstraints(
+                        minHeight: viewport.maxHeight,
+                      ),
+                      child: IntrinsicHeight(
+                        child: Padding(
+                          padding: const EdgeInsets.fromLTRB(
+                            AppSpacing.lg,
+                            0,
+                            AppSpacing.lg,
+                            20,
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                            children: [
+                              const AppHeader(),
+
+                              const SizedBox(height: AppSpacing.sm),
+
+                              Center(
+                                child:
+                                    Image.asset(
+                                          'assets/images/gasto_registrado.png',
+                                          width: 150,
+                                          height: 140,
+                                          fit: BoxFit.contain,
+                                          errorBuilder:
+                                              (context, error, stackTrace) {
+                                            return const SizedBox(
+                                              width: 150,
+                                              height: 140,
+                                              child: Icon(
+                                                LucideIcons.checkCircle2,
+                                                color: AppColors.primaryGreen,
+                                                size: 64,
+                                              ),
+                                            );
+                                          },
+                                        )
+                                        .animate()
+                                        .scale(
+                                          begin: const Offset(0.5, 0.5),
+                                          end: const Offset(1, 1),
+                                          duration: 700.ms,
+                                          curve: Curves.elasticOut,
+                                        )
+                                        .fade(duration: 250.ms),
+                              ),
+
+                              const SizedBox(height: AppSpacing.md),
+
+                              Text(
+                                '¡Gasto registrado!',
+                                textAlign: TextAlign.center,
+                                style: GoogleFonts.inter(
+                                  fontSize: 24,
+                                  fontWeight: FontWeight.w800,
+                                  color: AppColors.textPrimary,
+                                ),
+                              ).animateEntrance(delay: 100.ms),
+
+                              const SizedBox(height: 6),
+
+                              Text(
+                                'Tu gasto ha sido agregado correctamente.',
+                                textAlign: TextAlign.center,
+                                style: AppTextStyles.bodySecondary.copyWith(
+                                  fontSize: 13.5,
+                                ),
+                              ).animateEntrance(delay: 150.ms),
+
+                              const SizedBox(height: AppSpacing.lg),
+
+                              _buildSummaryCard()
+                                  .animateEntrance(delay: 200.ms),
+
+                              const SizedBox(height: AppSpacing.lg),
+
+                              Text(
+                                'Impacto inmediato',
+                                style: AppTextStyles.heading3.copyWith(
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ).animateEntrance(delay: 250.ms),
+
+                              const SizedBox(height: AppSpacing.sm + 4),
+
+                              _buildSmartScoreCard()
+                                  .animateEntrance(delay: 300.ms),
+
+                              const SizedBox(height: 12),
+
+                              _buildBudgetCard()
+                                  .animateEntrance(delay: 350.ms),
+
+                              const SizedBox(height: AppSpacing.lg),
+                              const Spacer(),
+
+                              _buildPrimaryButton(
+                                label: 'Agregar otro gasto',
+                                onTap: () => context.go('/expenses'),
+                              ).animateEntrance(delay: 400.ms),
+
+                              const SizedBox(height: 12),
+
+                              _buildOutlineButton(
+                                label: 'Ir al Dashboard',
+                                onTap: () => context.go('/'),
+                              ).animateEntrance(delay: 450.ms),
+                            ],
+                          ),
+                        ),
+                      ),
                     ),
-
-                    const SizedBox(height: AppSpacing.md),
-
-                    Text(
-                      '¡Gasto registrado!',
-                      textAlign: TextAlign.center,
-                      style: GoogleFonts.inter(
-                        fontSize: 24,
-                        fontWeight: FontWeight.w800,
-                        color: AppColors.textPrimary,
-                      ),
-                    ).animateEntrance(delay: 100.ms),
-
-                    const SizedBox(height: 6),
-
-                    Text(
-                      'Tu gasto ha sido agregado correctamente.',
-                      textAlign: TextAlign.center,
-                      style: AppTextStyles.bodySecondary.copyWith(
-                        fontSize: 13.5,
-                      ),
-                    ).animateEntrance(delay: 150.ms),
-
-                    const SizedBox(height: AppSpacing.lg),
-
-                    _buildSummaryCard().animateEntrance(delay: 200.ms),
-
-                    const SizedBox(height: AppSpacing.lg),
-
-                    Text(
-                      'Impacto inmediato',
-                      style: AppTextStyles.heading3.copyWith(
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ).animateEntrance(delay: 250.ms),
-
-                    const SizedBox(height: AppSpacing.sm + 4),
-
-                    _buildSmartScoreCard().animateEntrance(delay: 300.ms),
-
-                    const SizedBox(height: 12),
-
-                    _buildBudgetCard().animateEntrance(delay: 350.ms),
-
-                    const SizedBox(height: AppSpacing.lg),
-
-                    _buildPrimaryButton(
-                      label: 'Agregar otro gasto',
-                      onTap: () => context.go('/expenses'),
-                    ).animateEntrance(delay: 400.ms),
-
-                    const SizedBox(height: 12),
-
-                    _buildOutlineButton(
-                      label: 'Ir al Dashboard',
-                      onTap: () => context.go('/'),
-                    ).animateEntrance(delay: 450.ms),
-                  ],
-                ),
+                  );
+                },
               ),
 
               // Emisores de confetti: dos cañones en las esquinas
