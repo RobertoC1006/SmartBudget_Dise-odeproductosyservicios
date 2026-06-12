@@ -18,6 +18,11 @@ class SBEntranceAnimation extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Reduced motion: contenido visible de inmediato, sin fade/slide
+    // ni staggers (requisito de accesibilidad del flujo).
+    if (MediaQuery.of(context).disableAnimations) {
+      return child;
+    }
     return child
         .animate()
         .fade(delay: delay, duration: duration)
