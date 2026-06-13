@@ -337,8 +337,8 @@ class TestSmartScore:
         hoy = date.today()
         # 1. 0% de presupuesto usado -> 40 pts
         crear_presupuesto_mes(db, user_id=1, monto_base=1000, mes=hoy.month, anio=hoy.year)
-        # 2. Meta en progreso -> 30 pts
-        meta = crear_meta(db, user_id=1, nombre="Ahorro", monto_obj=1000)
+        # 2. Meta COMPLETADA -> 30 pts (criterio graduado: el máximo exige 100% de progreso)
+        meta = crear_meta(db, user_id=1, nombre="Ahorro", monto_obj=100)
         from core.goals import aportar_a_meta
         aportar_a_meta(db, user_id=1, goal_id=meta.id, monto=100)
         # 3. Cero alertas críticas -> 20 pts

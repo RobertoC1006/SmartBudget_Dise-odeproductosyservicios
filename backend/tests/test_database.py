@@ -1,3 +1,4 @@
+import sqlite3
 import pytest
 from datetime import date
 from sqlalchemy import create_engine, event
@@ -11,8 +12,13 @@ from core.enums import CategoriaGasto, EstadoMeta, FuenteGasto, TipoAlerta
 # ─── SQLite Foreign Key Enforcement ──────────────────────────────────────────
 # SQLite no valida llaves foráneas por defecto. Esta directiva activa el soporte
 # para que los tests de borrado en cascada (CASCADE) funcionen igual que en MySQL.
+# Solo aplica a conexiones SQLite reales: el listener es global, así que sin este
+# guard el PRAGMA se enviaría también a MySQL (al importar api.main en otros
+# tests) y rompería con un error de sintaxis.
 @event.listens_for(Engine, "connect")
 def set_sqlite_pragma(dbapi_connection, connection_record):
+    if not isinstance(dbapi_connection, sqlite3.Connection):
+        return
     cursor = dbapi_connection.cursor()
     cursor.execute("PRAGMA foreign_keys=ON")
     cursor.close()
