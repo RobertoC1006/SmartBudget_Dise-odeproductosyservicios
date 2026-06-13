@@ -7,9 +7,11 @@ Reglas del Score:
    - Escala lineal de 40 a 0 puntos.
    - 0% usado = 40 pts.
    - 100% o más usado = 0 pts.
-2. Metas de ahorro activas con progreso (30 pts max):
-   - Si el usuario tiene al menos una meta en progreso (con saldo_acumulado > 0) = 30 pts.
-   - De lo contrario = 0 pts.
+2. Metas de ahorro activas con progreso (30 pts max) — criterio GRADUADO:
+   - 10 pts base por tener al menos una meta activa con saldo_acumulado > 0.
+   - + hasta 20 pts proporcionales al progreso promedio de las metas activas
+     (EN_PROGRESO y COMPLETADA; las completadas cuentan como 100%).
+   - Así cada aporte sube el promedio y mueve el score de forma real.
 3. Ausencia de gastos inusuales (20 pts max):
    - Se restan 10 puntos por cada alerta CRÍTICA generada en el mes actual.
    - Mínimo 0 pts.
@@ -28,9 +30,12 @@ from core.budgets import obtener_presupuesto_activo
 from core.exceptions import PresupuestoNoEncontradoError
 
 
-def calcular_score(db: Session, user_id: int) -> int:
+def calcular_score_con_desglose(db: Session, user_id: int) -> dict:
     """
-    Calcula el SmartScore actual del usuario basándose en su comportamiento mensual.
+    Calcula el SmartScore y devuelve el detalle por criterio.
+
+    Retorna: {"score": int, "desglose": {presupuesto, metas, alertas, ahorro}}
+    donde cada valor del desglose son los puntos enteros que aporta ese criterio.
     Lanza PresupuestoNoEncontradoError si el usuario no tiene un presupuesto activo.
     """
     hoy = date.today()
@@ -48,16 +53,28 @@ def calcular_score(db: Session, user_id: int) -> int:
     else:
         puntos_presupuesto = 0.0
 
-    # --- CRITERIO 2: Metas activas con progreso (30 pts) ---
-    # Buscamos si hay alguna meta activa (EN_PROGRESO o COMPLETADA) que tenga ahorro acumulado
-    meta_con_progreso = db.query(Goal).filter(
+    # --- CRITERIO 2: Metas activas con progreso (30 pts, GRADUADO) ---
+    # 10 pts base por tener una meta con ahorro + hasta 20 pts según el progreso
+    # promedio de las metas activas (las completadas cuentan como 100%).
+    metas_activas = db.query(Goal).filter(
         and_(
             Goal.user_id == user_id,
             Goal.estado.in_([EstadoMeta.EN_PROGRESO, EstadoMeta.COMPLETADA]),
             Goal.saldo_acumulado > 0
         )
-    ).first()
-    puntos_metas = 30.0 if meta_con_progreso is not None else 0.0
+    ).all()
+
+    if metas_activas:
+        suma_progreso = 0.0
+        for m in metas_activas:
+            if m.monto_objetivo > 0:
+                suma_progreso += min(1.0, m.saldo_acumulado / m.monto_objetivo)
+            else:
+                suma_progreso += 1.0
+        progreso_promedio = suma_progreso / len(metas_activas)
+        puntos_metas = 10.0 + (20.0 * progreso_promedio)
+    else:
+        puntos_metas = 0.0
 
     # --- CRITERIO 3: Sin gastos inusuales (20 pts) ---
     # Contamos las alertas críticas del mes actual
@@ -93,9 +110,24 @@ def calcular_score(db: Session, user_id: int) -> int:
     else:
         puntos_ahorro = 0.0
 
-    # Sumar criterios y redondear al entero más cercano
     score_final = int(round(puntos_presupuesto + puntos_metas + puntos_alertas + puntos_ahorro))
-    return max(0, min(100, score_final))
+    return {
+        "score": max(0, min(100, score_final)),
+        "desglose": {
+            "presupuesto": int(round(puntos_presupuesto)),
+            "metas": int(round(puntos_metas)),
+            "alertas": int(round(puntos_alertas)),
+            "ahorro": int(round(puntos_ahorro)),
+        },
+    }
+
+
+def calcular_score(db: Session, user_id: int) -> int:
+    """
+    Calcula el SmartScore actual del usuario basándose en su comportamiento mensual.
+    Lanza PresupuestoNoEncontradoError si el usuario no tiene un presupuesto activo.
+    """
+    return calcular_score_con_desglose(db, user_id)["score"]
 
 
 def guardar_snapshot(db: Session, user_id: int) -> SmartScoreSnapshot:

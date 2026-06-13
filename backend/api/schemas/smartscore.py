@@ -2,8 +2,16 @@ from pydantic import BaseModel, ConfigDict
 from datetime import datetime
 from typing import Optional
 
+class ScoreDesglose(BaseModel):
+    """Puntos que aporta cada criterio al SmartScore total."""
+    presupuesto: int
+    metas: int
+    alertas: int
+    ahorro: int
+
 class ScoreResponse(BaseModel):
     score: int
+    desglose: Optional[ScoreDesglose] = None
 
 class SnapshotResponse(BaseModel):
     id: int

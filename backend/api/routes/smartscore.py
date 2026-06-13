@@ -17,8 +17,8 @@ def obtener_score(
     Lanza HTTP 404 si el usuario no tiene un presupuesto activo.
     """
     try:
-        score = smartscore_core.calcular_score(db, user.id)
-        return ScoreResponse(score=score)
+        resultado = smartscore_core.calcular_score_con_desglose(db, user.id)
+        return ScoreResponse(score=resultado["score"], desglose=resultado["desglose"])
     except PresupuestoNoEncontradoError as e:
         raise HTTPException(status_code=404, detail=str(e))
 
