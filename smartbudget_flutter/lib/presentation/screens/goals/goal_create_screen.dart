@@ -214,6 +214,7 @@ class _GoalCreateScreenState extends State<GoalCreateScreen> {
                 _label('Nombre de la meta'),
                 const SizedBox(height: 8),
                 _buildNameField().animateEntrance(delay: 80.ms),
+                _buildNameSuggestions().animateEntrance(delay: 90.ms),
                 const SizedBox(height: AppSpacing.lg),
 
                 Row(
@@ -411,11 +412,130 @@ class _GoalCreateScreenState extends State<GoalCreateScreen> {
       style: AppTextStyles.bodyMedium.copyWith(fontWeight: FontWeight.w600),
       textCapitalization: TextCapitalization.sentences,
       decoration: _fieldDecoration(
-        hint: 'Ej: Viaje a Cusco',
+        hint: _getHintForCategory(_categoria),
         prefix: const Icon(LucideIcons.tag, color: Color(0xFF80C29E), size: 18),
       ),
       validator: (v) =>
           (v == null || v.trim().isEmpty) ? 'Ingresa un nombre' : null,
+    );
+  }
+
+  List<String> _getSuggestionsForCategory(MetaCategoria cat) {
+    switch (cat) {
+      case MetaCategoria.playa:
+        return [
+          'Viaje a Máncora 🏖️',
+          'Punta Sal 🏝️',
+          'Fin de semana en Paracas',
+          'Vacaciones en Cancún',
+        ];
+      case MetaCategoria.viaje:
+        return [
+          'Viaje a Cusco ✈️',
+          'Eurotrip 🌍',
+          'Vacaciones familiares 🧳',
+          'Tour mochilero',
+        ];
+      case MetaCategoria.hogar:
+        return [
+          'Remodelar sala 🏠',
+          'Cuota de departamento',
+          'Comprar lavadora',
+          'Pagar luz',
+        ];
+      case MetaCategoria.transporte:
+        return [
+          'Comprar auto 🚗',
+          'Mantenimiento de carro',
+          'Comprar moto 🏍️',
+          'Cambiar llantas',
+        ];
+      case MetaCategoria.tecnologia:
+        return [
+          'Nueva laptop 💻',
+          'Cambiar celular',
+          'PlayStation 5 🎮',
+          'Audífonos inalámbricos',
+        ];
+      case MetaCategoria.educacion:
+        return [
+          'Curso de especialización 🎓',
+          'Matrícula de universidad',
+          'Maestría',
+          'Comprar libros',
+        ];
+      case MetaCategoria.salud:
+        return [
+          'Seguro de salud ❤️',
+          'Tratamiento dental',
+          'Fondo de emergencia médica',
+          'Gimnasio anual',
+        ];
+      case MetaCategoria.otros:
+        return [
+          'Ahorro navideño 🎁',
+          'Fondo de emergencia',
+          'Regalo especial',
+          'Cumpleaños',
+        ];
+    }
+  }
+
+  String _getHintForCategory(MetaCategoria cat) {
+    final list = _getSuggestionsForCategory(cat);
+    if (list.isNotEmpty) {
+      return 'Ej: ${list.first}';
+    }
+    return 'Ej: Viaje a Cusco';
+  }
+
+  Widget _buildNameSuggestions() {
+    final suggestions = _getSuggestionsForCategory(_categoria);
+    return Padding(
+      padding: const EdgeInsets.only(top: 8.0),
+      child: SizedBox(
+        height: 34,
+        child: ListView.separated(
+          scrollDirection: Axis.horizontal,
+          physics: const BouncingScrollPhysics(),
+          itemCount: suggestions.length,
+          separatorBuilder: (context, index) => const SizedBox(width: 8),
+          itemBuilder: (context, index) {
+            final suggestion = suggestions[index];
+            return GestureDetector(
+              onTap: () {
+                setState(() {
+                  _nameController.text = suggestion;
+                  _nameController.selection = TextSelection.fromPosition(
+                    TextPosition(offset: suggestion.length),
+                  );
+                });
+              },
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+                decoration: BoxDecoration(
+                  color: AppColors.surfaceWhite,
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(
+                    color: const Color(0xFFEAEAEA),
+                    width: 1.0,
+                  ),
+                ),
+                child: Center(
+                  child: Text(
+                    suggestion,
+                    style: GoogleFonts.inter(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.textPrimary,
+                    ),
+                  ),
+                ),
+              ),
+            );
+          },
+        ),
+      ),
     );
   }
 
