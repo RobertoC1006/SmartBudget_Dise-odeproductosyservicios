@@ -57,6 +57,28 @@ class EstadoMeta(str, Enum):
     CANCELADA = "cancelada"
 
 
+class CategoriaMeta(str, Enum):
+    """
+    Categoría visual de una meta de ahorro. Solo determina la ilustración 3D
+    (logo) que se muestra en Flutter; no afecta la lógica financiera.
+
+    Se asigna en el flujo de creación: la app detecta una categoría sugerida a
+    partir del nombre y el usuario puede corregirla con el selector (híbrido).
+
+    Usada en:
+    - db/models.py → campo `categoria` de Goal (texto)
+    - api/schemas/goals.py → validación en crear/editar meta
+    """
+    PLAYA = "playa"
+    VIAJE = "viaje"
+    HOGAR = "hogar"
+    TRANSPORTE = "transporte"
+    TECNOLOGIA = "tecnologia"
+    EDUCACION = "educacion"
+    SALUD = "salud"
+    OTROS = "otros"
+
+
 class FuenteGasto(str, Enum):
     """
     Cómo se originó el registro de un gasto.

@@ -8,7 +8,7 @@ y tipado estricto.
 
 from datetime import datetime, date
 from typing import List, Optional
-from sqlalchemy import String, ForeignKey, Numeric, Integer, Enum as SQLEnum, Text, Date, DateTime, func, UniqueConstraint, CheckConstraint
+from sqlalchemy import String, ForeignKey, Numeric, Integer, Boolean, Enum as SQLEnum, Text, Date, DateTime, func, UniqueConstraint, CheckConstraint
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 
 from core.enums import CategoriaGasto, EstadoMeta, FuenteGasto, TipoAlerta, OcupacionUsuario
@@ -96,16 +96,49 @@ class Goal(Base):
     descripcion: Mapped[Optional[str]] = mapped_column(Text)
     monto_objetivo: Mapped[float] = mapped_column(Numeric(10, 2, asdecimal=False))
     saldo_acumulado: Mapped[float] = mapped_column(Numeric(10, 2, asdecimal=False), default=0.0)
-    
+
     fecha_limite: Mapped[Optional[date]] = mapped_column(Date)
     estado: Mapped[EstadoMeta] = mapped_column(SQLEnum(EstadoMeta), default=EstadoMeta.PENDIENTE, index=True)
+    # Categoría visual (solo determina la ilustración del logo en Flutter).
+    # Se guarda el valor en minúsculas de CategoriaMeta (ej. "viaje", "playa").
+    categoria: Mapped[str] = mapped_column(String(20), default="otros")
+    # Si el usuario activó recordatorios para esta meta (notificación local en Flutter).
+    recordatorio: Mapped[bool] = mapped_column(Boolean, default=False)
     created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
 
     user: Mapped["User"] = relationship(back_populates="goals")
+    contributions: Mapped[List["GoalContribution"]] = relationship(
+        back_populates="goal",
+        cascade="all, delete-orphan",
+        order_by="GoalContribution.created_at",
+    )
 
     __table_args__ = (
         CheckConstraint("monto_objetivo > 0", name="check_goal_monto_objetivo_positivo"),
         CheckConstraint("saldo_acumulado >= 0", name="check_goal_saldo_acumulado_positivo"),
+    )
+
+class GoalContribution(Base):
+    """
+    Historial de aportes a una meta de ahorro.
+
+    Cada aporte (`aportar_a_meta`) inserta una fila aquí en la misma transacción
+    del trasvase. El gráfico de progreso del detalle de meta en Flutter se
+    construye con estos registros, de modo que refleje el comportamiento real
+    del usuario (meses sin aportar se ven planos).
+    """
+    __tablename__ = "goal_contributions"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    goal_id: Mapped[int] = mapped_column(ForeignKey("goals.id", ondelete="CASCADE"), index=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True)
+    monto: Mapped[float] = mapped_column(Numeric(10, 2, asdecimal=False))
+    created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now(), index=True)
+
+    goal: Mapped["Goal"] = relationship(back_populates="contributions")
+
+    __table_args__ = (
+        CheckConstraint("monto > 0", name="check_contribution_monto_positivo"),
     )
 
 class Expense(Base):
