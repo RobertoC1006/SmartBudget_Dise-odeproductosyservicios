@@ -395,7 +395,7 @@ class _GoalDetailScreenState extends State<GoalDetailScreen> {
       case MetaCategoria.viaje:
         return (right: 18, top: -16);
       default:
-        return (right: 8, top: -14);
+        return (right: 18, top: -14);
     }
   }
 
@@ -1075,17 +1075,25 @@ class _GoalDetailScreenState extends State<GoalDetailScreen> {
       await budgetProvider.loadDashboard();
       await provider.loadContributions(goal.id);
       if (!mounted) return;
-      final completed = provider.lastContributeResult?.completada ?? false;
+      final result = provider.lastContributeResult;
+      final completed = result?.completada ?? false;
+
+      if (completed) {
+        // 1D: celebración. Usamos la meta ya recargada (saldo/estado al día)
+        // y el delta real que sumó este aporte al SmartScore.
+        final updated = provider.goalById(goal.id) ?? goal;
+        context.go('/goals/success', extra: {
+          'goal': updated,
+          'scoreDelta': result?.scoreDelta ?? 0,
+        });
+        return;
+      }
+
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(
-            completed
-                ? '¡Felicidades! Alcanzaste tu meta 🎉'
-                : 'Aporte de ${GoalFormat.money(amount)} realizado',
-          ),
+          content: Text('Aporte de ${GoalFormat.money(amount)} realizado'),
         ),
       );
-      // La pantalla de celebración 1D llega en la Fase D.
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(

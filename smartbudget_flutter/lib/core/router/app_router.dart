@@ -13,6 +13,8 @@ import '../../data/models/expense_model.dart';
 import '../../presentation/screens/goals/goals_screen.dart';
 import '../../presentation/screens/goals/goal_create_screen.dart';
 import '../../presentation/screens/goals/goal_detail_screen.dart';
+import '../../presentation/screens/goals/goal_success_screen.dart';
+import '../../data/models/goal_model.dart';
 import '../../presentation/screens/analysis/analysis_screen.dart';
 import '../../presentation/screens/profile/profile_screen.dart';
 import '../../presentation/screens/simulator/simulator_screen.dart';
@@ -118,6 +120,24 @@ class AppRouter {
         path: '/goals/create',
         parentNavigatorKey: rootNavigatorKey,
         builder: (context, state) => const GoalCreateScreen(),
+      ),
+      GoRoute(
+        path: '/goals/success',
+        // 1D: celebración al completar una meta. Recibe la meta + el delta
+        // real del SmartScore vía `extra`.
+        parentNavigatorKey: rootNavigatorKey,
+        builder: (context, state) {
+          final data = state.extra as Map<String, dynamic>?;
+          final goal = data?['goal'] as GoalModel?;
+          if (goal == null) {
+            // Acceso directo sin datos: volver a la lista.
+            return const GoalsScreen();
+          }
+          return GoalSuccessScreen(
+            goal: goal,
+            scoreDelta: (data?['scoreDelta'] as int?) ?? 0,
+          );
+        },
       ),
       GoRoute(
         path: '/goals/:id',
