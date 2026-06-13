@@ -11,6 +11,8 @@ import '../../presentation/screens/expenses/scan_result_screen.dart';
 import '../../presentation/screens/expenses/expense_success_screen.dart';
 import '../../data/models/expense_model.dart';
 import '../../presentation/screens/goals/goals_screen.dart';
+import '../../presentation/screens/goals/goal_create_screen.dart';
+import '../../presentation/screens/goals/goal_detail_screen.dart';
 import '../../presentation/screens/analysis/analysis_screen.dart';
 import '../../presentation/screens/profile/profile_screen.dart';
 import '../../presentation/screens/simulator/simulator_screen.dart';
@@ -108,6 +110,23 @@ class AppRouter {
         path: '/simulator/micro-ahorro',
         parentNavigatorKey: rootNavigatorKey,
         builder: (context, state) => const MicroSavingsScreen(),
+      ),
+      // ─── Flujo de metas (fullscreen sobre el Shell) ───────────────────────
+      // /goals/create y /goals/success se declaran antes que /goals/:id para
+      // que el parámetro no capture esas rutas.
+      GoRoute(
+        path: '/goals/create',
+        parentNavigatorKey: rootNavigatorKey,
+        builder: (context, state) => const GoalCreateScreen(),
+      ),
+      GoRoute(
+        path: '/goals/:id',
+        parentNavigatorKey: rootNavigatorKey,
+        builder: (context, state) {
+          final id = int.tryParse(state.pathParameters['id'] ?? '');
+          if (id == null) return const GoalsScreen();
+          return GoalDetailScreen(goalId: id);
+        },
       ),
       GoRoute(
         path: '/expenses/scan',
