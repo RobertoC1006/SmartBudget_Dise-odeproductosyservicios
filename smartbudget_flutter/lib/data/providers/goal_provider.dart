@@ -14,6 +14,17 @@ class GoalProvider extends ChangeNotifier {
   String? _errorMessage;
   String? get errorMessage => _errorMessage;
 
+  /// Aportes de la meta abierta en el detalle (para el gráfico de progreso).
+  List<GoalContributionModel> _contributions = [];
+  List<GoalContributionModel> get contributions => _contributions;
+
+  bool _isLoadingContributions = false;
+  bool get isLoadingContributions => _isLoadingContributions;
+
+  /// Resultado del último aporte (delta real de SmartScore + estado de la meta).
+  ContributeResult? _lastContributeResult;
+  ContributeResult? get lastContributeResult => _lastContributeResult;
+
   Future<void> loadGoals() async {
     _isLoading = true;
     _errorMessage = null;
@@ -28,11 +39,20 @@ class GoalProvider extends ChangeNotifier {
     }
   }
 
+  GoalModel? goalById(int id) {
+    for (final g in _goals) {
+      if (g.id == id) return g;
+    }
+    return null;
+  }
+
   Future<bool> createGoal({
     required String nombre,
     String? descripcion,
     required double montoObjetivo,
     DateTime? fechaLimite,
+    String categoria = 'otros',
+    bool recordatorio = false,
   }) async {
     _isLoading = true;
     _errorMessage = null;
@@ -47,6 +67,8 @@ class GoalProvider extends ChangeNotifier {
         saldoAcumulado: 0.0,
         fechaLimite: fechaLimite,
         estado: EstadoMeta.enProgreso,
+        categoria: categoria,
+        recordatorio: recordatorio,
         createdAt: DateTime.now(),
       );
       await _goalService.createGoal(newGoal);
@@ -61,6 +83,51 @@ class GoalProvider extends ChangeNotifier {
     }
   }
 
+  Future<bool> updateGoal({
+    required int goalId,
+    String? nombre,
+    double? montoObjetivo,
+    DateTime? fechaLimite,
+    String? categoria,
+    bool? recordatorio,
+  }) async {
+    _isLoading = true;
+    _errorMessage = null;
+    notifyListeners();
+    try {
+      await _goalService.updateGoal(
+        goalId: goalId,
+        nombre: nombre,
+        montoObjetivo: montoObjetivo,
+        fechaLimite: fechaLimite,
+        categoria: categoria,
+        recordatorio: recordatorio,
+      );
+      await loadGoals();
+      return true;
+    } catch (e) {
+      _errorMessage = e.toString().replaceAll('Exception: ', '');
+      return false;
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+
+  Future<void> loadContributions(int goalId) async {
+    _isLoadingContributions = true;
+    notifyListeners();
+    try {
+      _contributions = await _goalService.getContributions(goalId);
+    } catch (e) {
+      _errorMessage = e.toString().replaceAll('Exception: ', '');
+      _contributions = [];
+    } finally {
+      _isLoadingContributions = false;
+      notifyListeners();
+    }
+  }
+
   Future<bool> contribute({
     required int goalId,
     required double amount,
@@ -69,7 +136,8 @@ class GoalProvider extends ChangeNotifier {
     _errorMessage = null;
     notifyListeners();
     try {
-      await _goalService.contributeToGoal(goalId, amount);
+      _lastContributeResult =
+          await _goalService.contributeToGoal(goalId, amount);
       await loadGoals();
       return true;
     } catch (e) {

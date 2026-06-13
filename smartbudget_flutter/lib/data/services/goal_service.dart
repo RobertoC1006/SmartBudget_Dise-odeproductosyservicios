@@ -21,7 +21,7 @@ class GoalService {
     try {
       final response = await _apiClient.dio.post(
         ApiEndpoints.goals,
-        data: goal.toJson(),
+        data: goal.toCreateJson(),
       );
       return GoalModel.fromJson(response.data);
     } on DioException catch (e) {
@@ -30,13 +30,55 @@ class GoalService {
     }
   }
 
-  Future<GoalModel> contributeToGoal(int goalId, double amount) async {
+  Future<GoalModel> updateGoal({
+    required int goalId,
+    String? nombre,
+    double? montoObjetivo,
+    DateTime? fechaLimite,
+    String? categoria,
+    bool? recordatorio,
+  }) async {
+    try {
+      // `fecha_limite` se envía siempre (null la limpia); el resto solo si cambia.
+      final data = <String, dynamic>{
+        'fecha_limite': fechaLimite?.toIso8601String().split('T')[0],
+      };
+      if (nombre != null) data['nombre'] = nombre;
+      if (montoObjetivo != null) data['monto_objetivo'] = montoObjetivo;
+      if (categoria != null) data['categoria'] = categoria;
+      if (recordatorio != null) data['recordatorio'] = recordatorio;
+
+      final response = await _apiClient.dio.put(
+        ApiEndpoints.goalById(goalId),
+        data: data,
+      );
+      return GoalModel.fromJson(response.data);
+    } on DioException catch (e) {
+      final message = e.response?.data['detail'] ?? 'Error al actualizar meta';
+      throw Exception(message);
+    }
+  }
+
+  Future<List<GoalContributionModel>> getContributions(int goalId) async {
+    try {
+      final response =
+          await _apiClient.dio.get(ApiEndpoints.contributionsGoal(goalId));
+      final List<dynamic> data = response.data;
+      return data.map((json) => GoalContributionModel.fromJson(json)).toList();
+    } on DioException catch (e) {
+      final message =
+          e.response?.data['detail'] ?? 'Error al obtener el historial de aportes';
+      throw Exception(message);
+    }
+  }
+
+  Future<ContributeResult> contributeToGoal(int goalId, double amount) async {
     try {
       final response = await _apiClient.dio.post(
         ApiEndpoints.contributeGoal(goalId),
-        queryParameters: {'monto': amount},
+        data: {'monto': amount},
       );
-      return GoalModel.fromJson(response.data);
+      return ContributeResult.fromJson(response.data);
     } on DioException catch (e) {
       final message = e.response?.data['detail'] ?? 'Error al realizar aportación';
       throw Exception(message);
@@ -45,7 +87,7 @@ class GoalService {
 
   Future<void> deleteGoal(int goalId) async {
     try {
-      await _apiClient.dio.delete('${ApiEndpoints.goals}$goalId');
+      await _apiClient.dio.delete(ApiEndpoints.goalById(goalId));
     } on DioException catch (e) {
       final message = e.response?.data['detail'] ?? 'Error al eliminar meta';
       throw Exception(message);

@@ -17,6 +17,17 @@ class SmartScoreService {
     }
   }
 
+  /// Score completo con el desglose por criterio (presupuesto/metas/alertas/ahorro).
+  Future<SmartScoreModel> getScore() async {
+    try {
+      final response = await _apiClient.dio.get(ApiEndpoints.smartScore);
+      return SmartScoreModel.fromJson(response.data);
+    } on DioException catch (e) {
+      final message = e.response?.data['detail'] ?? 'Error al obtener puntuación';
+      throw Exception(message);
+    }
+  }
+
   Future<List<SmartScoreSnapshotModel>> getScoreHistory({int meses = 6}) async {
     try {
       final response = await _apiClient.dio.get(

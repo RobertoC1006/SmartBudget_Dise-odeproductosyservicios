@@ -1,11 +1,29 @@
 class SmartScoreModel {
   final int score;
 
-  SmartScoreModel({required this.score});
+  /// Puntos que aporta cada criterio (del campo `desglose` del backend).
+  /// Pueden ser null si el backend no lo envía.
+  final int? presupuesto;
+  final int? metas;
+  final int? alertas;
+  final int? ahorro;
+
+  SmartScoreModel({
+    required this.score,
+    this.presupuesto,
+    this.metas,
+    this.alertas,
+    this.ahorro,
+  });
 
   factory SmartScoreModel.fromJson(Map<String, dynamic> json) {
+    final desglose = json['desglose'] as Map<String, dynamic>?;
     return SmartScoreModel(
       score: json['score'] ?? 0,
+      presupuesto: desglose?['presupuesto'],
+      metas: desglose?['metas'],
+      alertas: desglose?['alertas'],
+      ahorro: desglose?['ahorro'],
     );
   }
 

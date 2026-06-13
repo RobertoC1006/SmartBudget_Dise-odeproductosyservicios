@@ -44,7 +44,9 @@ class ApiEndpoints {
 
   // Goals
   static const String goals = '/goals/';
+  static String goalById(int id) => '/goals/$id';
   static String contributeGoal(int id) => '/goals/$id/contribute';
+  static String contributionsGoal(int id) => '/goals/$id/contributions';
 
   // Alerts
   static const String alerts = '/alerts/';
