@@ -372,7 +372,6 @@ class _GoalSuccessScreenState extends State<GoalSuccessScreen> {
           tooltip: 'Volver',
           visualDensity: VisualDensity.compact,
           padding: EdgeInsets.zero,
-          constraints: const BoxConstraints(),
           onPressed: _verMisMetas,
         ),
         Expanded(
@@ -385,8 +384,8 @@ class _GoalSuccessScreenState extends State<GoalSuccessScreen> {
             ),
           ),
         ),
-        // Espaciador simétrico para que el título quede centrado.
-        const SizedBox(width: 22),
+        // Espaciador simétrico (ancho del IconButton) para centrar el título.
+        const SizedBox(width: 40),
       ],
     );
   }
