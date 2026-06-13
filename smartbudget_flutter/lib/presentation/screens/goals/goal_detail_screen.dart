@@ -160,8 +160,11 @@ class _GoalDetailScreenState extends State<GoalDetailScreen> {
     return Row(
       children: [
         IconButton(
-          icon: const Icon(LucideIcons.arrowLeft,
-              color: AppColors.textPrimary, size: 22),
+          icon: const Icon(
+            LucideIcons.arrowLeft,
+            color: AppColors.textPrimary,
+            size: 22,
+          ),
           tooltip: 'Volver',
           visualDensity: VisualDensity.compact,
           padding: EdgeInsets.zero,
@@ -184,8 +187,11 @@ class _GoalDetailScreenState extends State<GoalDetailScreen> {
 
   Widget _buildMenu(GoalModel goal) {
     return PopupMenuButton<String>(
-      icon: const Icon(LucideIcons.moreVertical,
-          size: 20, color: AppColors.textPrimary),
+      icon: const Icon(
+        LucideIcons.moreVertical,
+        size: 20,
+        color: AppColors.textPrimary,
+      ),
       tooltip: 'Opciones',
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
       color: AppColors.surfaceWhite,
@@ -201,11 +207,16 @@ class _GoalDetailScreenState extends State<GoalDetailScreen> {
           value: 'edit',
           child: Row(
             children: [
-              const Icon(LucideIcons.pencil,
-                  size: 16, color: AppColors.textSecondary),
+              const Icon(
+                LucideIcons.pencil,
+                size: 16,
+                color: AppColors.textSecondary,
+              ),
               const SizedBox(width: 10),
-              Text('Editar meta',
-                  style: GoogleFonts.inter(fontWeight: FontWeight.w600)),
+              Text(
+                'Editar meta',
+                style: GoogleFonts.inter(fontWeight: FontWeight.w600),
+              ),
             ],
           ),
         ),
@@ -213,12 +224,19 @@ class _GoalDetailScreenState extends State<GoalDetailScreen> {
           value: 'delete',
           child: Row(
             children: [
-              Icon(LucideIcons.trash2,
-                  size: 16, color: AppColors.expenseRed.withValues(alpha: 0.8)),
+              Icon(
+                LucideIcons.trash2,
+                size: 16,
+                color: AppColors.expenseRed.withValues(alpha: 0.8),
+              ),
               const SizedBox(width: 10),
-              Text('Eliminar',
-                  style: GoogleFonts.inter(
-                      fontWeight: FontWeight.w600, color: AppColors.expenseRed)),
+              Text(
+                'Eliminar',
+                style: GoogleFonts.inter(
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.expenseRed,
+                ),
+              ),
             ],
           ),
         ),
@@ -228,8 +246,9 @@ class _GoalDetailScreenState extends State<GoalDetailScreen> {
 
   Widget _buildHeroCard(GoalModel goal) {
     final int percent = (goal.progreso * 100).round().clamp(0, 100);
+    final cat = resolveCategoria(goal.categoria, goal.nombre);
+    final off = _heroOffset(cat);
     return Container(
-      padding: const EdgeInsets.fromLTRB(18, 16, 10, 16),
       decoration: BoxDecoration(
         gradient: const LinearGradient(
           begin: Alignment.topLeft,
@@ -239,104 +258,145 @@ class _GoalDetailScreenState extends State<GoalDetailScreen> {
         borderRadius: BorderRadius.circular(22),
         border: Border.all(color: AppColors.accentGreenBorder, width: 1.2),
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      child: Stack(
+        clipBehavior: Clip.none,
         children: [
-          // Texto a la izquierda + ilustración GRANDE a la derecha (estilo mockup)
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+          // Ilustración grande a la derecha. Las escenas anchas (playa/viaje)
+          // ya llenan; los íconos cuadrados se empujan a la derecha con un
+          // offset por categoría para que también lleguen al borde.
+          Positioned(
+            right: off.right,
+            top: off.top,
+            child: IgnorePointer(
+              child: SizedBox(
+                width: 185,
+                height: 185,
+                child: Image.asset(
+                  cat.asset,
+                  fit: BoxFit.contain,
+                  errorBuilder: (context, error, stackTrace) => const Icon(
+                    LucideIcons.target,
+                    color: AppColors.primaryGreen,
+                    size: 80,
+                  ),
+                ),
+              ),
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(18, 18, 18, 16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Texto limitado a ~58% del ancho para no chocar con la imagen
+                FractionallySizedBox(
+                  widthFactor: 0.58,
+                  alignment: Alignment.centerLeft,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        goal.nombre,
+                        style: GoogleFonts.inter(
+                          fontSize: 18,
+                          fontWeight: FontWeight.w800,
+                          color: AppColors.primaryDark,
+                        ),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      const SizedBox(height: 6),
+                      FittedBox(
+                        fit: BoxFit.scaleDown,
+                        alignment: Alignment.centerLeft,
+                        child: Text(
+                          GoalFormat.money(goal.saldoAcumulado),
+                          style: GoogleFonts.inter(
+                            fontSize: 32,
+                            fontWeight: FontWeight.w800,
+                            color: AppColors.textPrimary,
+                            height: 1.05,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        'de ${GoalFormat.money(goal.montoObjetivo)}',
+                        style: GoogleFonts.inter(
+                          fontSize: 13.5,
+                          fontWeight: FontWeight.w500,
+                          color: AppColors.textSecondary,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 24),
+                Row(
                   children: [
+                    Expanded(
+                      child: ProgressBar(
+                        progress: goal.progreso,
+                        foregroundColor: const Color(0xFF8BC34A),
+                        height: 8,
+                      ),
+                    ),
+                    const SizedBox(width: 10),
                     Text(
-                      goal.nombre,
+                      '$percent%',
                       style: GoogleFonts.inter(
-                        fontSize: 18,
+                        fontSize: 14,
                         fontWeight: FontWeight.w800,
                         color: AppColors.primaryDark,
                       ),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
                     ),
-                    const SizedBox(height: 6),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
                     Text(
-                      GoalFormat.money(goal.saldoAcumulado),
+                      goal.completada
+                          ? '¡Meta completada!'
+                          : 'Faltan: ${GoalFormat.money(goal.faltante)}',
                       style: GoogleFonts.inter(
-                        fontSize: 32,
-                        fontWeight: FontWeight.w800,
+                        fontSize: 12.5,
+                        fontWeight: FontWeight.w600,
                         color: AppColors.textPrimary,
-                        height: 1.05,
                       ),
                     ),
-                    const SizedBox(height: 2),
                     Text(
-                      'de ${GoalFormat.money(goal.montoObjetivo)}',
+                      GoalFormat.remainingLabel(goal.fechaLimite),
                       style: GoogleFonts.inter(
-                        fontSize: 13.5,
+                        fontSize: 12.5,
                         fontWeight: FontWeight.w500,
                         color: AppColors.textSecondary,
                       ),
                     ),
                   ],
                 ),
-              ),
-              GoalCategoryIcon(
-                category: resolveCategoria(goal.categoria, goal.nombre),
-                size: 150,
-                bare: true,
-              ),
-            ],
-          ),
-          const SizedBox(height: 10),
-          Row(
-            children: [
-              Expanded(
-                child: ProgressBar(
-                  progress: goal.progreso,
-                  foregroundColor: const Color(0xFF8BC34A),
-                  height: 8,
-                ),
-              ),
-              const SizedBox(width: 10),
-              Text(
-                '$percent%',
-                style: GoogleFonts.inter(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w800,
-                  color: AppColors.primaryDark,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                goal.completada
-                    ? '¡Meta completada!'
-                    : 'Faltan: ${GoalFormat.money(goal.faltante)}',
-                style: GoogleFonts.inter(
-                  fontSize: 12.5,
-                  fontWeight: FontWeight.w600,
-                  color: AppColors.textPrimary,
-                ),
-              ),
-              Text(
-                GoalFormat.remainingLabel(goal.fechaLimite),
-                style: GoogleFonts.inter(
-                  fontSize: 12.5,
-                  fontWeight: FontWeight.w500,
-                  color: AppColors.textSecondary,
-                ),
-              ),
-            ],
+              ],
+            ),
           ),
         ],
       ),
     );
+  }
+
+  /// Posición de la ilustración del hero por categoría.
+  /// - playa/viaje: escenas anchas que ya llenan el PNG → se dejan tal cual.
+  /// - íconos cuadrados (con margen transparente): se empujan a la derecha
+  ///   (right negativo) para que el objeto llegue al borde como la playa.
+  ({double right, double top}) _heroOffset(MetaCategoria cat) {
+    switch (cat) {
+      case MetaCategoria.playa:
+        return (right: 18, top: -16);
+      case MetaCategoria.viaje:
+        return (right: 18, top: -16);
+      default:
+        return (right: 8, top: -14);
+    }
   }
 
   // ─── Tarjeta "Progreso" (gráfico real de aportes acumulados) ─────────────
@@ -378,12 +438,17 @@ class _GoalDetailScreenState extends State<GoalDetailScreen> {
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    const Icon(LucideIcons.lineChart,
-                        size: 36, color: Color(0xFFB0B7C3)),
+                    const Icon(
+                      LucideIcons.lineChart,
+                      size: 36,
+                      color: Color(0xFFB0B7C3),
+                    ),
                     const SizedBox(height: 10),
                     Text(
                       'Aún no has hecho aportes a esta meta',
-                      style: AppTextStyles.bodySecondary.copyWith(fontSize: 12.5),
+                      style: AppTextStyles.bodySecondary.copyWith(
+                        fontSize: 12.5,
+                      ),
                       textAlign: TextAlign.center,
                     ),
                   ],
@@ -408,8 +473,9 @@ class _GoalDetailScreenState extends State<GoalDetailScreen> {
         FlSpot(i.toDouble(), points[i].cum),
     ];
     // Con muchos puntos (vista por día) mostramos ~6 etiquetas, no todas.
-    final double labelInterval =
-        points.length <= 7 ? 1.0 : (points.length / 6).ceilToDouble();
+    final double labelInterval = points.length <= 7
+        ? 1.0
+        : (points.length / 6).ceilToDouble();
 
     // Verde pastel suave para la línea y el área.
     const pastelLine = Color(0xFF8BC34A);
@@ -429,8 +495,9 @@ class _GoalDetailScreenState extends State<GoalDetailScreen> {
       ),
       borderData: FlBorderData(show: false),
       titlesData: FlTitlesData(
-        rightTitles:
-            const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+        rightTitles: const AxisTitles(
+          sideTitles: SideTitles(showTitles: false),
+        ),
         topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
         leftTitles: AxisTitles(
           sideTitles: SideTitles(
@@ -474,14 +541,16 @@ class _GoalDetailScreenState extends State<GoalDetailScreen> {
         touchTooltipData: LineTouchTooltipData(
           getTooltipColor: (_) => AppColors.primaryDark,
           getTooltipItems: (spots) => spots
-              .map((s) => LineTooltipItem(
-                    GoalFormat.money(s.y),
-                    GoogleFonts.inter(
-                      color: Colors.white,
-                      fontWeight: FontWeight.w700,
-                      fontSize: 11.5,
-                    ),
-                  ))
+              .map(
+                (s) => LineTooltipItem(
+                  GoalFormat.money(s.y),
+                  GoogleFonts.inter(
+                    color: Colors.white,
+                    fontWeight: FontWeight.w700,
+                    fontSize: 11.5,
+                  ),
+                ),
+              )
               .toList(),
         ),
       ),
@@ -490,20 +559,18 @@ class _GoalDetailScreenState extends State<GoalDetailScreen> {
           spots: spots,
           isCurved: true,
           preventCurveOverShooting: true,
-          gradient: const LinearGradient(
-            colors: [pastelLine, pastelLineLight],
-          ),
+          gradient: const LinearGradient(colors: [pastelLine, pastelLineLight]),
           barWidth: 3.5,
           isStrokeCapRound: true,
           dotData: FlDotData(
             show: true,
             getDotPainter: (spot, percent, barData, index) =>
                 FlDotCirclePainter(
-              radius: 4,
-              color: Colors.white,
-              strokeWidth: 2.5,
-              strokeColor: pastelLine,
-            ),
+                  radius: 4,
+                  color: Colors.white,
+                  strokeWidth: 2.5,
+                  strokeColor: pastelLine,
+                ),
           ),
           belowBarData: BarAreaData(
             show: true,
@@ -583,8 +650,18 @@ class _GoalDetailScreenState extends State<GoalDetailScreen> {
 
   String _monthShort(int month) {
     const list = [
-      'Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun',
-      'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic',
+      'Ene',
+      'Feb',
+      'Mar',
+      'Abr',
+      'May',
+      'Jun',
+      'Jul',
+      'Ago',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dic',
     ];
     return list[(month - 1).clamp(0, 11)];
   }
@@ -600,12 +677,20 @@ class _GoalDetailScreenState extends State<GoalDetailScreen> {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          _rangeChip(label: 'Día', selected: _dailyView, onTap: () {
-            if (!_dailyView) setState(() => _dailyView = true);
-          }),
-          _rangeChip(label: 'Mes', selected: !_dailyView, onTap: () {
-            if (_dailyView) setState(() => _dailyView = false);
-          }),
+          _rangeChip(
+            label: 'Día',
+            selected: _dailyView,
+            onTap: () {
+              if (!_dailyView) setState(() => _dailyView = true);
+            },
+          ),
+          _rangeChip(
+            label: 'Mes',
+            selected: !_dailyView,
+            onTap: () {
+              if (_dailyView) setState(() => _dailyView = false);
+            },
+          ),
         ],
       ),
     );
@@ -639,9 +724,7 @@ class _GoalDetailScreenState extends State<GoalDetailScreen> {
           style: GoogleFonts.inter(
             fontSize: 12,
             fontWeight: FontWeight.w700,
-            color: selected
-                ? AppColors.primaryDark
-                : AppColors.textSecondary,
+            color: selected ? AppColors.primaryDark : AppColors.textSecondary,
           ),
         ),
       ),
@@ -662,8 +745,11 @@ class _GoalDetailScreenState extends State<GoalDetailScreen> {
               color: Color(0xFFE2F3DA),
               shape: BoxShape.circle,
             ),
-            child: const Icon(LucideIcons.trendingUp,
-                color: AppColors.primaryDark, size: 20),
+            child: const Icon(
+              LucideIcons.trendingUp,
+              color: AppColors.primaryDark,
+              size: 20,
+            ),
           ),
           const SizedBox(width: 12),
           Expanded(
@@ -683,8 +769,8 @@ class _GoalDetailScreenState extends State<GoalDetailScreen> {
                   goal.completada
                       ? 'Ya alcanzaste tu objetivo'
                       : hasDate
-                          ? 'Para alcanzar tu meta a tiempo'
-                          : 'Define una fecha objetivo para calcularlo',
+                      ? 'Para alcanzar tu meta a tiempo'
+                      : 'Define una fecha objetivo para calcularlo',
                   style: GoogleFonts.inter(
                     fontSize: 11.5,
                     fontWeight: FontWeight.w500,
@@ -847,7 +933,8 @@ class _GoalDetailScreenState extends State<GoalDetailScreen> {
     final formKey = GlobalKey<FormState>();
     final amountController = TextEditingController();
     final budgetProvider = context.read<BudgetProvider>();
-    final saldoDisponible = budgetProvider.currentBudget?.saldoDisponible ?? 0.0;
+    final saldoDisponible =
+        budgetProvider.currentBudget?.saldoDisponible ?? 0.0;
 
     showModalBottomSheet(
       context: context,
@@ -881,8 +968,10 @@ class _GoalDetailScreenState extends State<GoalDetailScreen> {
                   ),
                 ),
                 const SizedBox(height: 18),
-                Text('Aportar a esta meta',
-                    style: AppTextStyles.heading2.copyWith(fontSize: 18)),
+                Text(
+                  'Aportar a esta meta',
+                  style: AppTextStyles.heading2.copyWith(fontSize: 18),
+                ),
                 const SizedBox(height: 4),
                 Text(
                   goal.nombre,
@@ -896,8 +985,9 @@ class _GoalDetailScreenState extends State<GoalDetailScreen> {
                 TextFormField(
                   controller: amountController,
                   autofocus: true,
-                  keyboardType:
-                      const TextInputType.numberWithOptions(decimal: true),
+                  keyboardType: const TextInputType.numberWithOptions(
+                    decimal: true,
+                  ),
                   inputFormatters: [
                     FilteringTextInputFormatter.allow(RegExp(r'[0-9.]')),
                   ],
@@ -921,12 +1011,16 @@ class _GoalDetailScreenState extends State<GoalDetailScreen> {
                     focusedBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(16),
                       borderSide: const BorderSide(
-                          color: AppColors.primaryGreen, width: 1.5),
+                        color: AppColors.primaryGreen,
+                        width: 1.5,
+                      ),
                     ),
                   ),
                   validator: (v) {
                     final val = double.tryParse((v ?? '').trim());
-                    if (val == null || val <= 0) return 'Ingresa un monto válido';
+                    if (val == null || val <= 0) {
+                      return 'Ingresa un monto válido';
+                    }
                     if (val > saldoDisponible) {
                       return 'Saldo disponible insuficiente (${GoalFormat.money(saldoDisponible)})';
                     }
@@ -955,8 +1049,7 @@ class _GoalDetailScreenState extends State<GoalDetailScreen> {
                     customColor: AppColors.primaryGreen,
                     onPressed: () async {
                       if (!(formKey.currentState?.validate() ?? false)) return;
-                      final amount =
-                          double.parse(amountController.text.trim());
+                      final amount = double.parse(amountController.text.trim());
                       Navigator.pop(sheetContext);
                       await _confirmContribution(goal, amount);
                     },
@@ -996,7 +1089,9 @@ class _GoalDetailScreenState extends State<GoalDetailScreen> {
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(provider.errorMessage ?? 'No se pudo realizar el aporte'),
+          content: Text(
+            provider.errorMessage ?? 'No se pudo realizar el aporte',
+          ),
         ),
       );
     }
@@ -1032,15 +1127,18 @@ class _GoalDetailScreenState extends State<GoalDetailScreen> {
                     ),
                   ),
                   const SizedBox(height: 16),
-                  Text('Historial de aportes',
-                      style: AppTextStyles.heading2.copyWith(fontSize: 18)),
+                  Text(
+                    'Historial de aportes',
+                    style: AppTextStyles.heading2.copyWith(fontSize: 18),
+                  ),
                   const SizedBox(height: 12),
                   if (provider.isLoadingContributions)
                     const Padding(
                       padding: EdgeInsets.symmetric(vertical: 30),
                       child: Center(
                         child: CircularProgressIndicator(
-                            color: AppColors.primaryGreen),
+                          color: AppColors.primaryGreen,
+                        ),
                       ),
                     )
                   else if (aportes.isEmpty)
@@ -1072,14 +1170,19 @@ class _GoalDetailScreenState extends State<GoalDetailScreen> {
                                     color: Color(0xFFE8F5E9),
                                     shape: BoxShape.circle,
                                   ),
-                                  child: const Icon(LucideIcons.arrowUp,
-                                      size: 16, color: AppColors.primaryGreen),
+                                  child: const Icon(
+                                    LucideIcons.arrowUp,
+                                    size: 16,
+                                    color: AppColors.primaryGreen,
+                                  ),
                                 ),
                                 const SizedBox(width: 12),
                                 Expanded(
                                   child: Text(
-                                    DateFormat("dd MMM yyyy", 'es')
-                                        .format(a.createdAt),
+                                    DateFormat(
+                                      "dd MMM yyyy",
+                                      'es',
+                                    ).format(a.createdAt),
                                     style: GoogleFonts.inter(
                                       fontSize: 13,
                                       fontWeight: FontWeight.w500,
@@ -1114,8 +1217,9 @@ class _GoalDetailScreenState extends State<GoalDetailScreen> {
   void _showEditSheet(GoalModel goal) {
     final formKey = GlobalKey<FormState>();
     final nameController = TextEditingController(text: goal.nombre);
-    final amountController =
-        TextEditingController(text: goal.montoObjetivo.toStringAsFixed(2));
+    final amountController = TextEditingController(
+      text: goal.montoObjetivo.toStringAsFixed(2),
+    );
     DateTime? date = goal.fechaLimite;
 
     showModalBottomSheet(
@@ -1152,8 +1256,10 @@ class _GoalDetailScreenState extends State<GoalDetailScreen> {
                       ),
                     ),
                     const SizedBox(height: 18),
-                    Text('Editar meta',
-                        style: AppTextStyles.heading2.copyWith(fontSize: 18)),
+                    Text(
+                      'Editar meta',
+                      style: AppTextStyles.heading2.copyWith(fontSize: 18),
+                    ),
                     const SizedBox(height: 16),
                     TextFormField(
                       controller: nameController,
@@ -1165,8 +1271,9 @@ class _GoalDetailScreenState extends State<GoalDetailScreen> {
                     const SizedBox(height: 12),
                     TextFormField(
                       controller: amountController,
-                      keyboardType:
-                          const TextInputType.numberWithOptions(decimal: true),
+                      keyboardType: const TextInputType.numberWithOptions(
+                        decimal: true,
+                      ),
                       inputFormatters: [
                         FilteringTextInputFormatter.allow(RegExp(r'[0-9.]')),
                       ],
@@ -1192,30 +1299,42 @@ class _GoalDetailScreenState extends State<GoalDetailScreen> {
                       },
                       child: Container(
                         padding: const EdgeInsets.symmetric(
-                            horizontal: 16, vertical: 16),
+                          horizontal: 16,
+                          vertical: 16,
+                        ),
                         decoration: BoxDecoration(
                           color: const Color(0xFFF3FAF2),
                           borderRadius: BorderRadius.circular(16),
                           border: const Border.fromBorderSide(
-                              BorderSide(color: Color(0xFFE5E7EB))),
+                            BorderSide(color: Color(0xFFE5E7EB)),
+                          ),
                         ),
                         child: Row(
                           children: [
-                            const Icon(LucideIcons.calendar,
-                                size: 18, color: Color(0xFF80C29E)),
+                            const Icon(
+                              LucideIcons.calendar,
+                              size: 18,
+                              color: Color(0xFF80C29E),
+                            ),
                             const SizedBox(width: 12),
                             Expanded(
                               child: Text(
                                 date != null
-                                    ? DateFormat("dd 'de' MMMM 'de' yyyy", 'es')
-                                        .format(date!)
+                                    ? DateFormat(
+                                        "dd 'de' MMMM 'de' yyyy",
+                                        'es',
+                                      ).format(date!)
                                     : 'Sin fecha objetivo',
-                                style: AppTextStyles.bodyMedium
-                                    .copyWith(fontWeight: FontWeight.w600),
+                                style: AppTextStyles.bodyMedium.copyWith(
+                                  fontWeight: FontWeight.w600,
+                                ),
                               ),
                             ),
-                            const Icon(LucideIcons.chevronDown,
-                                size: 18, color: AppColors.textSecondary),
+                            const Icon(
+                              LucideIcons.chevronDown,
+                              size: 18,
+                              color: AppColors.textSecondary,
+                            ),
                           ],
                         ),
                       ),
@@ -1235,8 +1354,9 @@ class _GoalDetailScreenState extends State<GoalDetailScreen> {
                           final provider = context.read<GoalProvider>();
                           final messenger = ScaffoldMessenger.of(context);
                           final newName = nameController.text.trim();
-                          final newAmount =
-                              double.parse(amountController.text.trim());
+                          final newAmount = double.parse(
+                            amountController.text.trim(),
+                          );
                           final newDate = date;
                           Navigator.pop(sheetContext);
                           final ok = await provider.updateGoal(
@@ -1248,10 +1368,12 @@ class _GoalDetailScreenState extends State<GoalDetailScreen> {
                           if (!mounted) return;
                           messenger.showSnackBar(
                             SnackBar(
-                              content: Text(ok
-                                  ? 'Meta actualizada'
-                                  : provider.errorMessage ??
-                                      'No se pudo actualizar'),
+                              content: Text(
+                                ok
+                                    ? 'Meta actualizada'
+                                    : provider.errorMessage ??
+                                          'No se pudo actualizar',
+                              ),
                             ),
                           );
                         },
@@ -1295,11 +1417,13 @@ class _GoalDetailScreenState extends State<GoalDetailScreen> {
       builder: (dialogContext) {
         return AlertDialog(
           backgroundColor: AppColors.surfaceWhite,
-          shape:
-              RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-          title: Text('¿Eliminar meta?',
-              style: GoogleFonts.inter(
-                  fontWeight: FontWeight.bold, fontSize: 18)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+          ),
+          title: Text(
+            '¿Eliminar meta?',
+            style: GoogleFonts.inter(fontWeight: FontWeight.bold, fontSize: 18),
+          ),
           content: Text(
             '¿Estás seguro de eliminar "${goal.nombre}"? El ahorro acumulado se devolverá a tu presupuesto.',
             style: AppTextStyles.bodySecondary,
@@ -1307,10 +1431,13 @@ class _GoalDetailScreenState extends State<GoalDetailScreen> {
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(dialogContext),
-              child: Text('Cancelar',
-                  style: GoogleFonts.inter(
-                      color: AppColors.textSecondary,
-                      fontWeight: FontWeight.w600)),
+              child: Text(
+                'Cancelar',
+                style: GoogleFonts.inter(
+                  color: AppColors.textSecondary,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
             ),
             TextButton(
               onPressed: () async {
@@ -1324,15 +1451,19 @@ class _GoalDetailScreenState extends State<GoalDetailScreen> {
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
                       content: Text(
-                          provider.errorMessage ?? 'No se pudo eliminar'),
+                        provider.errorMessage ?? 'No se pudo eliminar',
+                      ),
                     ),
                   );
                 }
               },
-              child: Text('Eliminar',
-                  style: GoogleFonts.inter(
-                      color: AppColors.expenseRed,
-                      fontWeight: FontWeight.bold)),
+              child: Text(
+                'Eliminar',
+                style: GoogleFonts.inter(
+                  color: AppColors.expenseRed,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
             ),
           ],
         );
