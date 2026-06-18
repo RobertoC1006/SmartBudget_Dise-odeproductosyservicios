@@ -1,10 +1,10 @@
-name: smartbudged2.0
+name: smartbudget_2.0
 
 services:
   # ─── MySQL 8.0 ────────────────────────────────────────────────────────────
   mysql:
     image: mysql:8.0
-    container_name: smartbudget_mysql
+    container_name: smartbudget_mysql_v2
     restart: always
     environment:
       MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
@@ -28,7 +28,7 @@ services:
     build:
       context: ./backend
       dockerfile: Dockerfile
-    container_name: smartbudget_backend
+    container_name: smartbudget_backend_v2
     restart: always
     env_file:
       - .env
@@ -47,7 +47,7 @@ services:
   # ─── Adminer (Gestor BD) ──────────────────────────────────────────────────
   adminer:
     image: adminer:latest
-    container_name: smartbudget_adminer
+    container_name: smartbudget_adminer_v2
     restart: always
     ports:
       - "8082:8080"
