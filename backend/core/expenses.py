@@ -103,6 +103,24 @@ def listar_gastos_mes(
 
     return gastos
 
+
+def listar_gastos_recientes(db: Session, user_id: int, limite: int = 5) -> list[Expense]:
+    """
+    Devuelve los últimos gastos registrados por el usuario, ordenados por cuándo
+    se agregaron (created_at desc), sin filtrar por mes.
+
+    Lo usa "Actividad reciente" del Dashboard: una boleta que registras tarde
+    (p. ej. una compra de un mes anterior) debe aparecer arriba apenas la
+    escaneas, sin importar la fecha de la compra.
+    """
+    return (
+        db.query(Expense)
+        .filter(Expense.user_id == user_id)
+        .order_by(Expense.created_at.desc(), Expense.id.desc())
+        .limit(limite)
+        .all()
+    )
+
 def calcular_gastos_por_categoria(db: Session, user_id: int, mes: int, anio: int) -> dict:
     """
     Calcula cuánto se ha gastado en cada categoría durante un mes específico.

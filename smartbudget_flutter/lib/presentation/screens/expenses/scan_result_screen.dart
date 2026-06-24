@@ -43,6 +43,10 @@ class _ScanResultScreenState extends State<ScanResultScreen> {
   DateTime _selectedDate = DateTime.now();
   String? _comercio;
 
+  /// El OCR devolvió una fecha implausible (futura o muy antigua) y se
+  /// descartó a favor de hoy; sirve para avisar al usuario.
+  bool _ocrDateRejected = false;
+
   bool _editingAmount = false;
   bool _isSaving = false;
 
@@ -90,7 +94,16 @@ class _ScanResultScreenState extends State<ScanResultScreen> {
       }
     }
     if (data['fecha'] != null) {
-      _selectedDate = _parseOcrDate(data['fecha'] as String) ?? _selectedDate;
+      final parsed = _parseOcrDate(data['fecha'] as String);
+      // Respetamos la fecha real del recibo, incluso si es de días o semanas
+      // atrás (boletas que registras tarde). Lo único imposible en un recibo es
+      // una fecha futura: eso siempre es un error de lectura del OCR, así que en
+      // ese caso nos quedamos en hoy y avisamos para que el usuario la corrija.
+      if (parsed != null && !parsed.isAfter(DateTime.now())) {
+        _selectedDate = parsed;
+      } else if (parsed != null) {
+        _ocrDateRejected = true;
+      }
     }
     if (data['categoria'] != null) {
       _selectedCategory = _parseCategoryString(data['categoria'] as String);
@@ -399,6 +412,10 @@ class _ScanResultScreenState extends State<ScanResultScreen> {
           _buildFieldLabel('Fecha'),
           const SizedBox(height: 8),
           _buildDateField(context),
+          if (_ocrDateRejected) ...[
+            const SizedBox(height: 8),
+            _buildDateWarning(),
+          ],
           const SizedBox(height: AppSpacing.md),
           _buildFieldLabel('Descripción'),
           const SizedBox(height: 8),
@@ -641,6 +658,25 @@ class _ScanResultScreenState extends State<ScanResultScreen> {
           ),
         );
       },
+    );
+  }
+
+  Widget _buildDateWarning() {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Icon(LucideIcons.info, color: Color(0xFFB45309), size: 16),
+        const SizedBox(width: 8),
+        Expanded(
+          child: Text(
+            'La fecha del recibo se leyó como una fecha futura, así que usamos la '
+            'de hoy. Tócala para corregirla si hace falta.',
+            style: AppTextStyles.caption.copyWith(
+              color: const Color(0xFFB45309),
+            ),
+          ),
+        ),
+      ],
     );
   }
 

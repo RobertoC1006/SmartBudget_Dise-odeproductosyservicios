@@ -39,6 +39,7 @@ class ApiEndpoints {
 
   // Expenses
   static const String expenses = '/expenses/';
+  static const String recentExpenses = '/expenses/recent';
   static const String scanExpense = '/expenses/scan';
   static const String expensesSummary = '/expenses/summary';
 

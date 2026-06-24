@@ -28,6 +28,23 @@ class ExpenseService {
     }
   }
 
+  /// Últimos gastos registrados (por fecha de registro, sin filtrar por mes).
+  /// Alimenta "Actividad reciente" del Dashboard: una boleta registrada tarde
+  /// aparece arriba aunque la compra sea de un mes anterior.
+  Future<List<ExpenseModel>> getRecentExpenses({int limite = 5}) async {
+    try {
+      final response = await _apiClient.dio.get(
+        ApiEndpoints.recentExpenses,
+        queryParameters: {'limite': limite},
+      );
+      final List<dynamic> data = response.data;
+      return data.map((json) => ExpenseModel.fromJson(json)).toList();
+    } on DioException catch (e) {
+      final message = e.response?.data['detail'] ?? 'Error al obtener transacciones';
+      throw Exception(message);
+    }
+  }
+
   Future<ExpenseModel> createExpense(ExpenseModel expense) async {
     try {
       final response = await _apiClient.dio.post(

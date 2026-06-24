@@ -28,6 +28,19 @@ def listar_gastos(
     return expenses_core.listar_gastos_mes(db, user.id, mes, año, categoria)
 
 
+@router.get("/recent", response_model=list[ExpenseResponse])
+def listar_gastos_recientes(
+    limite: int = 5,
+    db=Depends(get_db),
+    user=Depends(get_current_user)
+):
+    """Últimos gastos registrados (por created_at), sin filtrar por mes.
+
+    Alimenta "Actividad reciente" del Dashboard.
+    """
+    return expenses_core.listar_gastos_recientes(db, user.id, limite)
+
+
 @router.post("/", response_model=ExpenseResponse, status_code=201)
 def crear_gasto(
     req: ExpenseCreate,

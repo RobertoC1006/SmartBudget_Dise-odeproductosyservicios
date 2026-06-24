@@ -73,7 +73,7 @@ class BudgetProvider extends ChangeNotifier {
       // 3. If budget exists, load other dashboard details in parallel
       if (_hasBudget) {
         final results = await Future.wait([
-          _expenseService.getExpenses(),
+          _expenseService.getRecentExpenses(limite: 5),
           _smartScoreService.getCurrentScore(),
           _smartScoreService.getScoreHistory(meses: 6),
           _alertService.getAlerts(),
