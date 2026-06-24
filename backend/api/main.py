@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from api.routes import auth, budgets, expenses, goals, alerts, simulator, smartscore
+from api.routes import auth, budgets, expenses, goals, alerts, simulator, smartscore, analysis
 from core.config import settings
 from db.session import engine
 from db.models import Base
@@ -26,6 +26,7 @@ app.include_router(goals.router, prefix="/api/goals", tags=["Goals"])
 app.include_router(alerts.router, prefix="/api/alerts", tags=["Alerts"])
 app.include_router(simulator.router, prefix="/api/simulator", tags=["Simulator"])
 app.include_router(smartscore.router, prefix="/api/smartscore", tags=["SmartScore"])
+app.include_router(analysis.router, prefix="/api/analysis", tags=["Analysis"])
 
 @app.get("/")
 def read_root():

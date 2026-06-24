@@ -10,13 +10,14 @@ import 'api_client.dart';
 class ExpenseService {
   final ApiClient _apiClient = ApiClient();
 
-  Future<List<ExpenseModel>> getExpenses({int? mes, int? anio}) async {
+  Future<List<ExpenseModel>> getExpenses({int? mes, int? anio, String? categoria}) async {
     try {
       final response = await _apiClient.dio.get(
         ApiEndpoints.expenses,
         queryParameters: {
           if (mes != null) 'mes': mes,
           if (anio != null) 'año': anio,
+          if (categoria != null) 'categoria': categoria,
         },
       );
       final List<dynamic> data = response.data;

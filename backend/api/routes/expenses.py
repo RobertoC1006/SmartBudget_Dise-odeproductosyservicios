@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File
 from api.schemas.expense import ExpenseCreate, ExpenseResponse, ScanResponse
 from api.dependencies import get_db, get_current_user
+from core.enums import CategoriaGasto
 from core import expenses as expenses_core
 from core import ai as ai_core
 from core.exceptions import (
@@ -17,13 +18,14 @@ router = APIRouter()
 def listar_gastos(
     mes: int = None,
     año: int = None,
+    categoria: CategoriaGasto = None,
     db=Depends(get_db),
     user=Depends(get_current_user)
 ):
     from datetime import date
     mes = mes or date.today().month
     año = año or date.today().year
-    return expenses_core.listar_gastos_mes(db, user.id, mes, año)
+    return expenses_core.listar_gastos_mes(db, user.id, mes, año, categoria)
 
 
 @router.post("/", response_model=ExpenseResponse, status_code=201)

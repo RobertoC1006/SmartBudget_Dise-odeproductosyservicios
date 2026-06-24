@@ -75,19 +75,32 @@ def eliminar_gasto(db: Session, user_id: int, expense_id: int) -> None:
     db.delete(gasto)
     db.commit()
 
-def listar_gastos_mes(db: Session, user_id: int, mes: int, anio: int) -> list[Expense]:
+def listar_gastos_mes(
+    db: Session,
+    user_id: int,
+    mes: int,
+    anio: int,
+    categoria: CategoriaGasto | None = None,
+) -> list[Expense]:
     """
     Devuelve la lista de gastos realizados en un mes y año específicos.
     Se ordenan por fecha de manera descendente (los más recientes primero).
+
+    Si se pasa `categoria`, filtra solo los gastos de esa categoría
+    (lo usa la pantalla de Detalle de categoría / "Ver todas").
     """
+    filtros = [
+        Expense.user_id == user_id,
+        extract('month', Expense.fecha) == mes,
+        extract('year', Expense.fecha) == anio,
+    ]
+    if categoria is not None:
+        filtros.append(Expense.categoria == categoria)
+
     gastos = db.query(Expense).filter(
-        and_(
-            Expense.user_id == user_id,
-            extract('month', Expense.fecha) == mes,
-            extract('year', Expense.fecha) == anio
-        )
+        and_(*filtros)
     ).order_by(Expense.fecha.desc(), Expense.id.desc()).all()
-    
+
     return gastos
 
 def calcular_gastos_por_categoria(db: Session, user_id: int, mes: int, anio: int) -> dict:

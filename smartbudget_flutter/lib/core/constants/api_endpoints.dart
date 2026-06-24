@@ -61,4 +61,8 @@ class ApiEndpoints {
   // Simulator
   static const String simulate = '/simulator/';
   static const String savingsProjection = '/simulator/savings-projection/';
+
+  // Analysis (rediseño)
+  static const String analysisOverview = '/analysis/overview';
+  static const String analysisCategoryDetail = '/analysis/category-detail';
 }

@@ -124,3 +124,114 @@ class SimulationResult {
     );
   }
 }
+
+// ─── Rediseño Análisis: Resumen (1A) y Detalle de categoría (1D) ─────────────
+
+/// Métricas de la pantalla 1A: gasto/ingresos/ahorro del mes + el mes anterior.
+/// Los % de variación se calculan en el cliente para evitar divisiones por cero
+/// cuando el mes anterior no tiene datos.
+class AnalysisOverview {
+  final int mes;
+  final int anio;
+  final double gastoTotal;
+  final double ingresos;
+  final double ahorro;
+  final double gastoTotalPrev;
+  final double ingresosPrev;
+  final double ahorroPrev;
+
+  AnalysisOverview({
+    required this.mes,
+    required this.anio,
+    required this.gastoTotal,
+    required this.ingresos,
+    required this.ahorro,
+    required this.gastoTotalPrev,
+    required this.ingresosPrev,
+    required this.ahorroPrev,
+  });
+
+  factory AnalysisOverview.fromJson(Map<String, dynamic> json) {
+    return AnalysisOverview(
+      mes: json['mes'] ?? 0,
+      anio: json['anio'] ?? 0,
+      gastoTotal: (json['gasto_total'] as num?)?.toDouble() ?? 0.0,
+      ingresos: (json['ingresos'] as num?)?.toDouble() ?? 0.0,
+      ahorro: (json['ahorro'] as num?)?.toDouble() ?? 0.0,
+      gastoTotalPrev: (json['gasto_total_prev'] as num?)?.toDouble() ?? 0.0,
+      ingresosPrev: (json['ingresos_prev'] as num?)?.toDouble() ?? 0.0,
+      ahorroPrev: (json['ahorro_prev'] as num?)?.toDouble() ?? 0.0,
+    );
+  }
+
+  /// Variación % vs mes anterior; null si no hay base previa con la que comparar.
+  double? get gastoDeltaPct => _delta(gastoTotal, gastoTotalPrev);
+  double? get ingresosDeltaPct => _delta(ingresos, ingresosPrev);
+  double? get ahorroDeltaPct => _delta(ahorro, ahorroPrev);
+
+  static double? _delta(double actual, double previo) {
+    if (previo == 0) return null;
+    return (actual - previo) / previo.abs() * 100;
+  }
+}
+
+/// Una fila del desglose por comercio (pantalla 1D).
+class MerchantBreakdown {
+  final String comercio;
+  final double total;
+  final int nTransacciones;
+
+  MerchantBreakdown({
+    required this.comercio,
+    required this.total,
+    required this.nTransacciones,
+  });
+
+  factory MerchantBreakdown.fromJson(Map<String, dynamic> json) {
+    return MerchantBreakdown(
+      comercio: json['comercio'] ?? 'Sin comercio',
+      total: (json['total'] as num?)?.toDouble() ?? 0.0,
+      nTransacciones: json['n_transacciones'] ?? 0,
+    );
+  }
+}
+
+/// Detalle de una categoría (pantalla 1D): total, comparativa, % y desglose.
+class CategoryDetail {
+  final String categoria;
+  final int mes;
+  final int anio;
+  final double total;
+  final double totalPrev;
+  final double porcentajeDelTotal;
+  final List<MerchantBreakdown> desgloseComercio;
+
+  CategoryDetail({
+    required this.categoria,
+    required this.mes,
+    required this.anio,
+    required this.total,
+    required this.totalPrev,
+    required this.porcentajeDelTotal,
+    required this.desgloseComercio,
+  });
+
+  factory CategoryDetail.fromJson(Map<String, dynamic> json) {
+    final list = json['desglose_comercio'] as List? ?? [];
+    return CategoryDetail(
+      categoria: json['categoria'] ?? '',
+      mes: json['mes'] ?? 0,
+      anio: json['anio'] ?? 0,
+      total: (json['total'] as num?)?.toDouble() ?? 0.0,
+      totalPrev: (json['total_prev'] as num?)?.toDouble() ?? 0.0,
+      porcentajeDelTotal: (json['porcentaje_del_total'] as num?)?.toDouble() ?? 0.0,
+      desgloseComercio: list.map((e) => MerchantBreakdown.fromJson(e)).toList(),
+    );
+  }
+
+  /// Variación % vs mes anterior; null si no hay base previa.
+  double? get deltaPct {
+    if (totalPrev == 0) return null;
+    return (total - totalPrev) / totalPrev * 100;
+  }
+}

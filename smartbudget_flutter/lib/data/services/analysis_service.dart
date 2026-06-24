@@ -62,4 +62,44 @@ class AnalysisService {
       throw Exception(message);
     }
   }
+
+  /// Resumen general del mes + comparativa al mes anterior (pantalla 1A).
+  Future<AnalysisOverview> getOverview({int? mes, int? anio}) async {
+    try {
+      final queryParams = <String, dynamic>{};
+      if (mes != null) queryParams['mes'] = mes;
+      if (anio != null) queryParams['año'] = anio;
+
+      final response = await _apiClient.dio.get(
+        ApiEndpoints.analysisOverview,
+        queryParameters: queryParams,
+      );
+      return AnalysisOverview.fromJson(response.data);
+    } on DioException catch (e) {
+      final message = e.response?.data['detail'] ?? 'Error al obtener el resumen de análisis';
+      throw Exception(message);
+    }
+  }
+
+  /// Detalle de una categoría: total, comparativa, % y desglose por comercio (pantalla 1D).
+  Future<CategoryDetail> getCategoryDetail({
+    required String categoria,
+    int? mes,
+    int? anio,
+  }) async {
+    try {
+      final queryParams = <String, dynamic>{'categoria': categoria};
+      if (mes != null) queryParams['mes'] = mes;
+      if (anio != null) queryParams['año'] = anio;
+
+      final response = await _apiClient.dio.get(
+        ApiEndpoints.analysisCategoryDetail,
+        queryParameters: queryParams,
+      );
+      return CategoryDetail.fromJson(response.data);
+    } on DioException catch (e) {
+      final message = e.response?.data['detail'] ?? 'Error al obtener el detalle de la categoría';
+      throw Exception(message);
+    }
+  }
 }
