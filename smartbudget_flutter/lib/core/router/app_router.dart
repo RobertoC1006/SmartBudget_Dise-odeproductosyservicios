@@ -12,6 +12,7 @@ import '../../presentation/screens/expenses/expense_success_screen.dart';
 import '../../data/models/expense_model.dart';
 import '../../presentation/screens/goals/goals_screen.dart';
 import '../../presentation/screens/goals/goal_create_screen.dart';
+import '../../presentation/screens/goals/goal_created_screen.dart';
 import '../../presentation/screens/goals/goal_detail_screen.dart';
 import '../../presentation/screens/goals/goal_success_screen.dart';
 import '../../data/models/goal_model.dart';
@@ -122,6 +123,21 @@ class AppRouter {
         path: '/goals/create',
         parentNavigatorKey: rootNavigatorKey,
         builder: (context, state) => const GoalCreateScreen(),
+      ),
+      GoRoute(
+        path: '/goals/created',
+        // 1C-success: celebración al crear una meta (mismo estilo que 1D).
+        // Recibe la meta recién creada vía `extra`.
+        parentNavigatorKey: rootNavigatorKey,
+        builder: (context, state) {
+          final data = state.extra as Map<String, dynamic>?;
+          final goal = data?['goal'] as GoalModel?;
+          if (goal == null) {
+            // Acceso directo sin datos: volver a la lista.
+            return const GoalsScreen();
+          }
+          return GoalCreatedScreen(goal: goal);
+        },
       ),
       GoRoute(
         path: '/goals/success',

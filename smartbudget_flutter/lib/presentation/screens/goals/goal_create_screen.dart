@@ -126,7 +126,7 @@ class _GoalCreateScreenState extends State<GoalCreateScreen> {
     setState(() => _isSaving = true);
 
     final provider = context.read<GoalProvider>();
-    final success = await provider.createGoal(
+    final created = await provider.createGoal(
       nombre: _nameController.text.trim(),
       montoObjetivo: _amount,
       fechaLimite: _targetDate,
@@ -137,11 +137,9 @@ class _GoalCreateScreenState extends State<GoalCreateScreen> {
     if (!mounted) return;
     setState(() => _isSaving = false);
 
-    if (success) {
-      context.go('/goals');
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('¡Meta creada con éxito!')),
-      );
+    if (created != null) {
+      // 1C-success: celebración al crear la meta (mismo estilo que 1D).
+      context.go('/goals/created', extra: {'goal': created});
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(

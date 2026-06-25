@@ -46,7 +46,9 @@ class GoalProvider extends ChangeNotifier {
     return null;
   }
 
-  Future<bool> createGoal({
+  /// Crea una meta. Devuelve la meta creada (con id real del backend) para
+  /// alimentar la pantalla de éxito 1C-success, o `null` si falló.
+  Future<GoalModel?> createGoal({
     required String nombre,
     String? descripcion,
     required double montoObjetivo,
@@ -71,12 +73,12 @@ class GoalProvider extends ChangeNotifier {
         recordatorio: recordatorio,
         createdAt: DateTime.now(),
       );
-      await _goalService.createGoal(newGoal);
+      final created = await _goalService.createGoal(newGoal);
       await loadGoals();
-      return true;
+      return created;
     } catch (e) {
       _errorMessage = e.toString().replaceAll('Exception: ', '');
-      return false;
+      return null;
     } finally {
       _isLoading = false;
       notifyListeners();
