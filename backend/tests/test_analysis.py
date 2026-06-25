@@ -19,7 +19,7 @@ from core.analysis import (
     resumen_overview,
     detalle_categoria,
     desglose_por_comercio,
-    SIN_COMERCIO,
+    ETIQUETA_GENERICA,
 )
 
 engine = create_engine("sqlite:///:memory:")
@@ -37,12 +37,13 @@ def db():
     Base.metadata.drop_all(bind=engine)
 
 
-def _gasto(db, categoria, monto, mes, anio, comercio=None, dia=15):
+def _gasto(db, categoria, monto, mes, anio, comercio=None, descripcion=None, dia=15):
     db.add(Expense(
         user_id=1,
         categoria=categoria,
         monto=monto,
         comercio=comercio,
+        descripcion=descripcion,
         fecha=date(anio, mes, dia),
     ))
 
@@ -72,16 +73,36 @@ def datos(db):
     return ma, aa
 
 
-def test_desglose_por_comercio_ordenado_y_sin_comercio(db, datos):
+def test_desglose_por_comercio_ordenado_y_generico(db, datos):
     ma, aa = datos
     desglose = desglose_por_comercio(db, 1, CategoriaGasto.COMIDA, ma, aa)
 
-    # KFC (100) > Metro (80) > Sin comercio (20), ordenado desc
-    assert [d["comercio"] for d in desglose] == ["KFC", "Metro", SIN_COMERCIO]
+    # KFC (100) > Metro (80) > Otros gastos (20, sin comercio ni descripción), desc
+    assert [d["comercio"] for d in desglose] == ["KFC", "Metro", ETIQUETA_GENERICA]
     assert desglose[0]["total"] == 100.0
     assert desglose[0]["n_transacciones"] == 2  # las dos compras en KFC
-    assert desglose[2]["comercio"] == SIN_COMERCIO
+    assert desglose[2]["comercio"] == ETIQUETA_GENERICA
     assert desglose[2]["total"] == 20.0
+
+
+def test_desglose_usa_descripcion_cuando_no_hay_comercio(db):
+    """Un gasto manual sin comercio se agrupa por su descripción, no como genérico."""
+    hoy = date.today()
+    ma, aa = hoy.month, hoy.year
+    # Dos cenas manuales (misma descripción, sin comercio) + una con comercio.
+    _gasto(db, CategoriaGasto.COMIDA, 30, ma, aa, comercio=None, descripcion="Cena")
+    _gasto(db, CategoriaGasto.COMIDA, 10, ma, aa, comercio=None, descripcion="Cena")
+    _gasto(db, CategoriaGasto.COMIDA, 50, ma, aa, comercio="KFC")
+    db.commit()
+
+    desglose = desglose_por_comercio(db, 1, CategoriaGasto.COMIDA, ma, aa)
+
+    # "KFC" (50) > "Cena" (40, 2 movimientos); nunca aparece "Otros gastos".
+    assert [d["comercio"] for d in desglose] == ["KFC", "Cena"]
+    cena = desglose[1]
+    assert cena["total"] == 40.0
+    assert cena["n_transacciones"] == 2
+    assert all(d["comercio"] != ETIQUETA_GENERICA for d in desglose)
 
 
 def test_overview_con_comparativa_mes_anterior(db, datos):

@@ -189,7 +189,7 @@ class MerchantBreakdown {
 
   factory MerchantBreakdown.fromJson(Map<String, dynamic> json) {
     return MerchantBreakdown(
-      comercio: json['comercio'] ?? 'Sin comercio',
+      comercio: json['comercio'] ?? 'Otros gastos',
       total: (json['total'] as num?)?.toDouble() ?? 0.0,
       nTransacciones: json['n_transacciones'] ?? 0,
     );

@@ -6,8 +6,10 @@ Responsabilidades (todo aditivo, no toca la lógica de gastos/presupuesto):
 2. Detalle de una categoría: total, comparativa y desglose POR COMERCIO (pantalla 1D).
 
 Decisión de diseño (Roberto, 2026-06-14): el backend NO tiene subcategorías, así
-que el desglose de una categoría se hace agrupando sus gastos por `comercio`
-(los gastos sin comercio se agrupan como "Sin comercio").
+que el desglose de una categoría se hace agrupando sus gastos por `comercio`.
+Cuando un gasto no tiene comercio (registro manual), se usa su `descripcion`
+como nombre; si tampoco hay descripción, cae a "Otros gastos" (ajuste 2026-06-24,
+para no mostrar "Sin comercio").
 """
 
 from sqlalchemy.orm import Session
@@ -16,7 +18,8 @@ from sqlalchemy import and_, extract, func
 from db.models import Expense, Budget
 from core.enums import CategoriaGasto
 
-SIN_COMERCIO = "Sin comercio"
+# Etiqueta de respaldo cuando un gasto no tiene comercio ni descripción.
+ETIQUETA_GENERICA = "Otros gastos"
 
 
 def _mes_anterior(mes: int, anio: int) -> tuple[int, int]:
@@ -69,12 +72,14 @@ def desglose_por_comercio(
 ) -> list[dict]:
     """Agrupa los gastos de una categoría por comercio, ordenados de mayor a menor.
 
-    Los gastos sin comercio (NULL/vacío) se agrupan bajo "Sin comercio".
+    El nombre de cada grupo es el `comercio`; si el gasto no tiene comercio
+    (registro manual), se usa su `descripcion`; si tampoco hay descripción, cae a
+    "Otros gastos". Así no se muestra "Sin comercio" cuando hay un detalle útil.
     """
     filas = db.query(
         Expense.comercio,
-        func.sum(Expense.monto).label("total"),
-        func.count(Expense.id).label("n"),
+        Expense.descripcion,
+        Expense.monto,
     ).filter(
         and_(
             Expense.user_id == user_id,
@@ -82,15 +87,17 @@ def desglose_por_comercio(
             extract("month", Expense.fecha) == mes,
             extract("year", Expense.fecha) == anio,
         )
-    ).group_by(Expense.comercio).all()
+    ).all()
 
-    # NULL y cadena vacía se fusionan en "Sin comercio".
     acumulado: dict[str, dict] = {}
-    for comercio, total, n in filas:
-        clave = comercio if comercio else SIN_COMERCIO
-        registro = acumulado.setdefault(clave, {"comercio": clave, "total": 0.0, "n_transacciones": 0})
-        registro["total"] += float(total) if total is not None else 0.0
-        registro["n_transacciones"] += int(n)
+    for comercio, descripcion, monto in filas:
+        # comercio → descripción → genérico (ignorando NULL y cadenas vacías).
+        clave = (comercio or "").strip() or (descripcion or "").strip() or ETIQUETA_GENERICA
+        registro = acumulado.setdefault(
+            clave, {"comercio": clave, "total": 0.0, "n_transacciones": 0}
+        )
+        registro["total"] += float(monto) if monto is not None else 0.0
+        registro["n_transacciones"] += 1
 
     desglose = list(acumulado.values())
     desglose.sort(key=lambda x: x["total"], reverse=True)
