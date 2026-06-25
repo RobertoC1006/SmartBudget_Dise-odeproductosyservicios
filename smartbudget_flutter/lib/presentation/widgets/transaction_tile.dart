@@ -17,6 +17,10 @@ class TransactionTile extends StatelessWidget {
   final bool isIncome;
   final VoidCallback? onTap;
 
+  /// Reemplaza el ícono de categoría por defecto (lo usa Análisis para mostrar
+  /// la ilustración 3D en vez del ícono de línea).
+  final Widget? leading;
+
   const TransactionTile({
     super.key,
     required this.title,
@@ -26,9 +30,14 @@ class TransactionTile extends StatelessWidget {
     this.category,
     this.isIncome = false,
     this.onTap,
+    this.leading,
   });
 
-  factory TransactionTile.fromExpense(ExpenseModel expense, {VoidCallback? onTap}) {
+  factory TransactionTile.fromExpense(
+    ExpenseModel expense, {
+    VoidCallback? onTap,
+    Widget? leading,
+  }) {
     return TransactionTile(
       title: expense.comercio ?? expense.descripcion ?? 'Gasto sin comercio',
       subtitle: expense.descripcion ?? _capitalize(expense.categoria.name),
@@ -37,6 +46,7 @@ class TransactionTile extends StatelessWidget {
       category: expense.categoria,
       isIncome: false,
       onTap: onTap,
+      leading: leading,
     );
   }
 
@@ -58,7 +68,8 @@ class TransactionTile extends StatelessWidget {
             padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm, vertical: AppSpacing.sm),
             child: Row(
               children: [
-                category != null
+                leading ??
+                    (category != null
                     ? CategoryIcon(
                         category: category!,
                         shape: BoxShape.rectangle,
@@ -79,7 +90,7 @@ class TransactionTile extends StatelessWidget {
                           color: isIncome ? AppColors.incomeGreen : AppColors.textSecondary,
                           size: 22.0,
                         ),
-                      ),
+                      )),
                 const SizedBox(width: AppSpacing.md),
                 Expanded(
                   child: Column(

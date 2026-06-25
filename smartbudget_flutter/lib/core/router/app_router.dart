@@ -16,6 +16,8 @@ import '../../presentation/screens/goals/goal_detail_screen.dart';
 import '../../presentation/screens/goals/goal_success_screen.dart';
 import '../../data/models/goal_model.dart';
 import '../../presentation/screens/analysis/analysis_screen.dart';
+import '../../presentation/screens/analysis/analysis_categories_screen.dart';
+import '../../presentation/screens/analysis/analysis_category_detail_screen.dart';
 import '../../presentation/screens/profile/profile_screen.dart';
 import '../../presentation/screens/simulator/simulator_screen.dart';
 import '../../presentation/screens/simulator/micro_savings_screen.dart';
@@ -146,6 +148,34 @@ class AppRouter {
           final id = int.tryParse(state.pathParameters['id'] ?? '');
           if (id == null) return const GoalsScreen();
           return GoalDetailScreen(goalId: id);
+        },
+      ),
+      // ─── Flujo de Análisis (drill-down sobre el Shell) ────────────────────
+      // 1B Categorías y (futuro) 1D Detalle son fullscreen con su propio
+      // BottomNavBar. Reciben el mes seleccionado por `extra` desde 1A.
+      // /analysis/categories se declara antes que /analysis/category/:key.
+      GoRoute(
+        path: '/analysis/categories',
+        parentNavigatorKey: rootNavigatorKey,
+        builder: (context, state) {
+          final data = state.extra as Map<String, dynamic>?;
+          return AnalysisCategoriesScreen(
+            mes: data?['mes'] as int?,
+            anio: data?['anio'] as int?,
+          );
+        },
+      ),
+      GoRoute(
+        path: '/analysis/category/:key',
+        parentNavigatorKey: rootNavigatorKey,
+        builder: (context, state) {
+          final key = state.pathParameters['key'] ?? 'otros';
+          final data = state.extra as Map<String, dynamic>?;
+          return AnalysisCategoryDetailScreen(
+            categoryKey: key,
+            mes: data?['mes'] as int?,
+            anio: data?['anio'] as int?,
+          );
         },
       ),
       GoRoute(

@@ -19,6 +19,7 @@ import '../../widgets/header_background_painter.dart';
 import '../../widgets/loading_shimmer.dart';
 import '../../widgets/sb_entrance_animation.dart';
 import '../../widgets/smart_score_ring.dart';
+import 'widgets/category_visuals.dart';
 
 /// 1A · Análisis — Resumen.
 /// Portada de la pestaña Análisis: gasto total con comparativa, ingresos/ahorro,
@@ -50,80 +51,13 @@ class _AnalysisScreenState extends State<AnalysisScreen> {
 
   // ─── Helpers de categoría ──────────────────────────────────────────────────
 
-  Color _getCategoryColor(String key) {
-    switch (key.toLowerCase()) {
-      case 'comida':
-        return const Color(0xFFEF4444);
-      case 'transporte':
-        return const Color(0xFF3B82F6);
-      case 'ocio':
-        return const Color(0xFFA855F7);
-      case 'salud':
-        return const Color(0xFF10B981);
-      case 'educacion':
-        return const Color(0xFF6366F1);
-      case 'ropa':
-        return const Color(0xFFEC4899);
-      case 'hogar':
-        return const Color(0xFFF59E0B);
-      case 'tecnologia':
-        return const Color(0xFF0EA5E9);
-      case 'viajes':
-        return const Color(0xFF14B8A6);
-      default:
-        return const Color(0xFF6B7280);
-    }
-  }
+  // Color/ícono/rótulo de categoría: fuente única en CategoryVisuals (compartida
+  // con 1B/1D). Se conservan como métodos privados por los múltiples call sites.
+  Color _getCategoryColor(String key) => CategoryVisuals.color(key);
 
-  String _translateCategory(String key) {
-    switch (key.toLowerCase()) {
-      case 'comida':
-        return 'Comida';
-      case 'transporte':
-        return 'Transporte';
-      case 'ocio':
-        return 'Entretenimiento';
-      case 'salud':
-        return 'Salud';
-      case 'educacion':
-        return 'Educación';
-      case 'ropa':
-        return 'Ropa';
-      case 'hogar':
-        return 'Hogar';
-      case 'tecnologia':
-        return 'Tecnología';
-      case 'viajes':
-        return 'Viajes';
-      default:
-        return 'Otros';
-    }
-  }
+  String _translateCategory(String key) => CategoryVisuals.label(key);
 
-  IconData _getCategoryIcon(String key) {
-    switch (key.toLowerCase()) {
-      case 'comida':
-        return LucideIcons.utensils;
-      case 'transporte':
-        return LucideIcons.car;
-      case 'ocio':
-        return LucideIcons.gamepad2;
-      case 'salud':
-        return LucideIcons.heart;
-      case 'educacion':
-        return LucideIcons.bookOpen;
-      case 'ropa':
-        return LucideIcons.shirt;
-      case 'hogar':
-        return LucideIcons.home;
-      case 'tecnologia':
-        return LucideIcons.laptop;
-      case 'viajes':
-        return LucideIcons.plane;
-      default:
-        return LucideIcons.moreHorizontal;
-    }
-  }
+  IconData _getCategoryIcon(String key) => CategoryVisuals.icon(key);
 
   String _getMonthName(int month) {
     const list = [
@@ -141,26 +75,10 @@ class _AnalysisScreenState extends State<AnalysisScreen> {
     return (month >= 1 && month <= 12) ? list[month - 1] : '';
   }
 
-  // Agrupa la distribución a un máximo de 6 segmentos (top 5 + "Otros")
-  // para mantener el donut legible (regla no-pie-overuse).
-  Map<String, double> _topCategories(Map<String, double> expenses) {
-    final entries = expenses.entries.toList()
-      ..sort((a, b) => b.value.compareTo(a.value));
-    if (entries.length <= 6) {
-      return {for (final e in entries) e.key: e.value};
-    }
-    final result = <String, double>{};
-    double otros = 0;
-    for (var i = 0; i < entries.length; i++) {
-      if (i < 5 && entries[i].key.toLowerCase() != 'otros') {
-        result[entries[i].key] = entries[i].value;
-      } else {
-        otros += entries[i].value;
-      }
-    }
-    if (otros > 0) result['otros'] = otros;
-    return result;
-  }
+  // Agrupa la distribución a un máximo de 6 segmentos (top 5 + "Otros") para
+  // el donut. Delegado a CategoryVisuals (compartido con 1B/1D).
+  Map<String, double> _topCategories(Map<String, double> expenses) =>
+      CategoryVisuals.topCategories(expenses);
 
   TextStyle _amountStyle(double size, Color color, {FontWeight weight = FontWeight.w800}) {
     return GoogleFonts.inter(
