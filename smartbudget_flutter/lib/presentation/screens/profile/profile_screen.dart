@@ -156,7 +156,7 @@ class _ProfileHeader extends StatelessWidget {
           ),
         ),
         Padding(
-          padding: const EdgeInsets.fromLTRB(AppSpacing.md, 12, AppSpacing.md, 0),
+          padding: const EdgeInsets.fromLTRB(AppSpacing.md, 28, AppSpacing.md, 0),
           child: Column(
             children: [
               // Avatar
@@ -282,8 +282,8 @@ class _ProfileHeader extends StatelessWidget {
         ),
         // Engrane → Configuración
         Positioned(
-          top: 4,
-          right: 4,
+          top: 16,
+          right: 8,
           child: IconButton(
             onPressed: () => context.push('/profile/settings'),
             icon: const Icon(LucideIcons.settings, size: 22),

@@ -31,6 +31,9 @@ class BottomNavBar extends StatelessWidget {
       case 4:
         context.go('/simulator');
         break;
+      case 5:
+        context.go('/profile');
+        break;
     }
   }
 
@@ -42,6 +45,7 @@ class BottomNavBar extends StatelessWidget {
       _NavBarItem(icon: LucideIcons.target, label: 'Metas'),
       _NavBarItem(icon: LucideIcons.barChart2, label: 'Análisis'),
       _NavBarItem(icon: LucideIcons.flaskConical, label: 'Simulador'),
+      _NavBarItem(icon: LucideIcons.user, label: 'Perfil'),
     ];
 
     return SafeArea(
@@ -64,7 +68,7 @@ class BottomNavBar extends StatelessWidget {
           ),
         ),
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 8.0),
+          padding: const EdgeInsets.symmetric(horizontal: 6.0, vertical: 8.0),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: List.generate(items.length, (index) {
@@ -78,7 +82,7 @@ class BottomNavBar extends StatelessWidget {
                   duration: const Duration(milliseconds: 250),
                   curve: Curves.easeInOut,
                   padding: const EdgeInsets.symmetric(
-                    horizontal: 16.0,
+                    horizontal: 8.0,
                     vertical: 10.0,
                   ),
                   decoration: BoxDecoration(

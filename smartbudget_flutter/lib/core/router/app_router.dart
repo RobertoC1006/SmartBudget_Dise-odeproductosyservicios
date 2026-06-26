@@ -76,6 +76,8 @@ class AppRouter {
             index = 3;
           } else if (location.startsWith('/simulator')) {
             index = 4;
+          } else if (location.startsWith('/profile')) {
+            index = 5;
           }
 
           return AppScaffold(
