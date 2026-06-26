@@ -66,4 +66,7 @@ class ApiEndpoints {
   // Analysis (rediseño)
   static const String analysisOverview = '/analysis/overview';
   static const String analysisCategoryDetail = '/analysis/category-detail';
+
+  // Profile (rediseño)
+  static const String profileSummary = '/profile/summary';
 }

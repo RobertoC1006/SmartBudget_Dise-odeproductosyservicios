@@ -9,6 +9,7 @@ import 'data/providers/budget_provider.dart';
 import 'data/providers/expense_provider.dart';
 import 'data/providers/goal_provider.dart';
 import 'data/providers/analysis_provider.dart';
+import 'data/providers/profile_provider.dart';
 import 'data/services/api_client.dart';
 
 void main() async {
@@ -53,6 +54,7 @@ class _MyAppState extends State<MyApp> {
         ChangeNotifierProvider(create: (_) => ExpenseProvider()),
         ChangeNotifierProvider(create: (_) => GoalProvider()),
         ChangeNotifierProvider(create: (_) => AnalysisProvider()),
+        ChangeNotifierProvider(create: (_) => ProfileProvider()),
       ],
       child: MaterialApp.router(
         title: 'SmartBudget+',

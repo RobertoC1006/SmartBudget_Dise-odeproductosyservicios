@@ -4,64 +4,126 @@ import 'package:go_router/go_router.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:intl/intl.dart';
 
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_spacing.dart';
-import '../../../data/models/user_model.dart';
+import '../../../core/utils/currency_formatter.dart';
 import '../../../data/providers/auth_provider.dart';
+import '../../../data/providers/profile_provider.dart';
+import '../../../data/models/profile_summary_model.dart';
 import '../../widgets/header_background_painter.dart';
+import '../../widgets/smart_score_ring.dart';
+import 'widgets/coming_soon.dart';
 
-class ProfileScreen extends StatelessWidget {
+/// 1A · Perfil — Resumen (rediseño según mockup).
+///
+/// Vive dentro del Shell (la barra inferior la pone `AppScaffold`). Los datos
+/// del "Resumen personal" y el SmartScore son reales (`ProfileProvider`); el
+/// badge Premium es visual y "Días racha" es un placeholder (no hay tracking).
+///
+/// Toda la vista scrollea como una sola unidad (cabecera incluida).
+///
+/// Nav a 1B/1C/1D: las rutas `/profile/settings|security|preferences` se
+/// registran en las Fases B/C/D (mismo patrón que el flujo de metas/análisis).
+class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
+
+  @override
+  State<ProfileScreen> createState() => _ProfileScreenState();
+}
+
+class _ProfileScreenState extends State<ProfileScreen> {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      context.read<ProfileProvider>().loadSummary();
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
     final auth = context.watch<AuthProvider>();
+    final profile = context.watch<ProfileProvider>();
     final user = auth.user;
+    final summary = profile.summary;
 
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: SafeArea(
-        child: Column(
-          children: [
-            // ─── Header ────────────────────────────────────────
-            _ProfileHeader(user: user),
-            // ─── Content ───────────────────────────────────────
-            Expanded(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: AppSpacing.md,
-                  vertical: AppSpacing.sm,
+        child: RefreshIndicator(
+          color: AppColors.primaryGreen,
+          onRefresh: () => context.read<ProfileProvider>().loadSummary(),
+          child: SingleChildScrollView(
+            physics: const AlwaysScrollableScrollPhysics(),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                _ProfileHeader(user: user),
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(
+                    AppSpacing.md,
+                    AppSpacing.xs,
+                    AppSpacing.md,
+                    AppSpacing.lg,
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      _SmartScoreCard(summary: summary)
+                          .animate()
+                          .fade(delay: 80.ms, duration: 360.ms)
+                          .slideY(begin: 0.08, end: 0, curve: Curves.easeOut),
+                      const SizedBox(height: AppSpacing.md),
+                      _SectionTitle('Resumen personal')
+                          .animate()
+                          .fade(delay: 140.ms, duration: 360.ms),
+                      const SizedBox(height: AppSpacing.sm),
+                      _StatsGrid(summary: summary)
+                          .animate()
+                          .fade(delay: 180.ms, duration: 360.ms)
+                          .slideY(begin: 0.08, end: 0, curve: Curves.easeOut),
+                      const SizedBox(height: AppSpacing.md),
+                      _PremiumCard()
+                          .animate()
+                          .fade(delay: 240.ms, duration: 360.ms)
+                          .slideY(begin: 0.08, end: 0, curve: Curves.easeOut),
+                      const SizedBox(height: AppSpacing.md),
+                      _AccessRow(
+                        icon: LucideIcons.settings,
+                        label: 'Configuración',
+                        onTap: () => context.push('/profile/settings'),
+                      ).animate().fade(delay: 300.ms, duration: 320.ms),
+                      const SizedBox(height: AppSpacing.sm),
+                      _AccessRow(
+                        icon: LucideIcons.shield,
+                        label: 'Seguridad',
+                        onTap: () => context.push('/profile/security'),
+                      ).animate().fade(delay: 340.ms, duration: 320.ms),
+                      const SizedBox(height: AppSpacing.sm),
+                      _AccessRow(
+                        icon: LucideIcons.slidersHorizontal,
+                        label: 'Preferencias',
+                        onTap: () => context.push('/profile/preferences'),
+                      ).animate().fade(delay: 380.ms, duration: 320.ms),
+                      const SizedBox(height: AppSpacing.md),
+                      _LogoutButton()
+                          .animate()
+                          .fade(delay: 420.ms, duration: 320.ms),
+                    ],
+                  ),
                 ),
-                child: Column(
-                  children: [
-                    const SizedBox(height: AppSpacing.md),
-                    _InfoSection(user: user)
-                        .animate()
-                        .fade(delay: 100.ms, duration: 400.ms)
-                        .slideY(begin: 0.08, end: 0, curve: Curves.easeOut),
-                    const SizedBox(height: AppSpacing.md),
-                    _OcupacionSection(user: user)
-                        .animate()
-                        .fade(delay: 200.ms, duration: 400.ms)
-                        .slideY(begin: 0.08, end: 0, curve: Curves.easeOut),
-                    const SizedBox(height: AppSpacing.lg),
-                    _LogoutButton()
-                        .animate()
-                        .fade(delay: 300.ms, duration: 400.ms),
-                    const SizedBox(height: AppSpacing.lg),
-                  ],
-                ),
-              ),
+              ],
             ),
-          ],
+          ),
         ),
       ),
     );
   }
 }
 
-// ─── Header con avatar y nombre ───────────────────────────────────────────────
+// ─── Header: avatar, nombre, badge y "miembro desde" ──────────────────────────
 
 class _ProfileHeader extends StatelessWidget {
   const _ProfileHeader({required this.user});
@@ -71,97 +133,162 @@ class _ProfileHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     final nombre = user?.nombre ?? 'Usuario';
     final email = user?.email ?? '';
-    final initials = nombre.isNotEmpty ? nombre[0].toUpperCase() : 'U';
+    final initials = nombre.trim().isNotEmpty ? nombre.trim()[0].toUpperCase() : 'U';
+
+    String miembroDesde = '';
+    final createdAt = user?.createdAt as DateTime?;
+    if (createdAt != null) {
+      final mesAnio = DateFormat('MMMM yyyy', 'es').format(createdAt);
+      final capitalizado =
+          mesAnio.isNotEmpty ? mesAnio[0].toUpperCase() + mesAnio.substring(1) : mesAnio;
+      miembroDesde = 'Miembro desde $capitalizado';
+    }
 
     return Stack(
       children: [
-        SizedBox(
-          height: 180,
-          width: double.infinity,
-          child: CustomPaint(painter: HeaderBackgroundPainter()),
+        const Positioned(
+          top: 0,
+          left: 0,
+          right: 0,
+          child: SizedBox(
+            height: 150,
+            child: CustomPaint(painter: HeaderBackgroundPainter()),
+          ),
         ),
         Padding(
-          padding: const EdgeInsets.fromLTRB(
-            AppSpacing.md,
-            AppSpacing.md,
-            AppSpacing.md,
-            AppSpacing.lg,
-          ),
+          padding: const EdgeInsets.fromLTRB(AppSpacing.md, 12, AppSpacing.md, 0),
           child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                'Mi perfil',
-                style: GoogleFonts.inter(
-                  fontSize: 22,
-                  fontWeight: FontWeight.w800,
-                  color: const Color(0xFF1C2434),
+              // Avatar
+              Container(
+                width: 80,
+                height: 80,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  gradient: const LinearGradient(
+                    colors: [Color(0xFF7CC827), Color(0xFF4C8C2B)],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: const Color(0xFF7CC827).withValues(alpha: 0.32),
+                      blurRadius: 16,
+                      offset: const Offset(0, 6),
+                    ),
+                  ],
+                ),
+                child: Center(
+                  child: Text(
+                    initials,
+                    style: GoogleFonts.inter(
+                      fontSize: 32,
+                      fontWeight: FontWeight.w800,
+                      color: Colors.white,
+                    ),
+                  ),
                 ),
               ),
-              const SizedBox(height: AppSpacing.md),
+              const SizedBox(height: 10),
+              // Nombre + Editar
               Row(
+                mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  // Avatar con iniciales
-                  Container(
-                    width: 64,
-                    height: 64,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      gradient: const LinearGradient(
-                        colors: [Color(0xFF7CC827), Color(0xFF4C8C2B)],
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                      ),
-                      boxShadow: [
-                        BoxShadow(
-                          color: const Color(0xFF7CC827).withValues(alpha: 0.3),
-                          blurRadius: 12,
-                          offset: const Offset(0, 4),
-                        ),
-                      ],
-                    ),
-                    child: Center(
-                      child: Text(
-                        initials,
-                        style: GoogleFonts.inter(
-                          fontSize: 28,
-                          fontWeight: FontWeight.w800,
-                          color: Colors.white,
-                        ),
+                  Flexible(
+                    child: Text(
+                      nombre,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: GoogleFonts.inter(
+                        fontSize: 20,
+                        fontWeight: FontWeight.w800,
+                        color: const Color(0xFF1C2434),
                       ),
                     ),
                   ),
-                  const SizedBox(width: AppSpacing.md),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          nombre,
-                          style: GoogleFonts.inter(
-                            fontSize: 18,
-                            fontWeight: FontWeight.w700,
-                            color: const Color(0xFF1C2434),
+                  const SizedBox(width: 8),
+                  GestureDetector(
+                    onTap: () => context.push('/profile/settings'),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                      decoration: BoxDecoration(
+                        color: AppColors.primaryGreen.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(50),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            'Editar',
+                            style: GoogleFonts.inter(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                              color: const Color(0xFF4C8C2B),
+                            ),
                           ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                        const SizedBox(height: 2),
-                        Text(
-                          email,
-                          style: GoogleFonts.inter(
-                            fontSize: 13,
-                            color: const Color(0xFF6B7280),
-                          ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ],
+                          const SizedBox(width: 4),
+                          const Icon(LucideIcons.pencil, size: 12, color: Color(0xFF4C8C2B)),
+                        ],
+                      ),
                     ),
                   ),
                 ],
               ),
+              const SizedBox(height: 2),
+              Text(
+                email,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: GoogleFonts.inter(fontSize: 13, color: const Color(0xFF6B7280)),
+              ),
+              const SizedBox(height: 10),
+              // Badge SmartBudget+ (visual aspiracional)
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                decoration: BoxDecoration(
+                  color: AppColors.primaryLight,
+                  borderRadius: BorderRadius.circular(50),
+                  border: Border.all(color: AppColors.primaryGreen.withValues(alpha: 0.35)),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      'SmartBudget+',
+                      style: GoogleFonts.inter(
+                        fontSize: 12.5,
+                        fontWeight: FontWeight.w700,
+                        color: const Color(0xFF4C8C2B),
+                      ),
+                    ),
+                    const SizedBox(width: 5),
+                    const Text('👑', style: TextStyle(fontSize: 13)),
+                  ],
+                ),
+              ),
+              if (miembroDesde.isNotEmpty) ...[
+                const SizedBox(height: 6),
+                Text(
+                  miembroDesde,
+                  style: GoogleFonts.inter(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w500,
+                    color: const Color(0xFF8A94A6),
+                  ),
+                ),
+              ],
             ],
+          ),
+        ),
+        // Engrane → Configuración
+        Positioned(
+          top: 4,
+          right: 4,
+          child: IconButton(
+            onPressed: () => context.push('/profile/settings'),
+            icon: const Icon(LucideIcons.settings, size: 22),
+            color: const Color(0xFF5C6470),
+            tooltip: 'Configuración',
           ),
         ),
       ],
@@ -169,18 +296,216 @@ class _ProfileHeader extends StatelessWidget {
   }
 }
 
-// ─── Sección de información básica ────────────────────────────────────────────
+// ─── Tarjeta SmartScore (datos reales) ────────────────────────────────────────
 
-class _InfoSection extends StatelessWidget {
-  const _InfoSection({required this.user});
-  final dynamic user;
+class _SmartScoreCard extends StatelessWidget {
+  const _SmartScoreCard({required this.summary});
+  final ProfileSummary? summary;
+
+  String _copy(int score) {
+    if (score >= 80) return '¡Vas increíble! 🌟';
+    if (score >= 70) return '¡Vas por buen camino! 🚀';
+    if (score >= 50) return 'Vas mejorando 💪';
+    if (score >= 30) return 'Cuidado con tus gastos ⚠️';
+    return 'Es hora de ahorrar 🐷';
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final score = summary?.smartScore;
+    final delta = summary?.smartScoreDelta ?? 0;
+
+    return GestureDetector(
+      onTap: () => context.push('/analysis'),
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: AppColors.primaryLight,
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: AppColors.accentGreenBorder),
+        ),
+        child: score == null
+            ? Row(
+                children: [
+                  const Icon(LucideIcons.activity, size: 36, color: Color(0xFF8A94A6)),
+                  const SizedBox(width: 14),
+                  Expanded(
+                    child: Text(
+                      'Crea tu presupuesto para ver tu SmartScore.',
+                      style: GoogleFonts.inter(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                        color: const Color(0xFF5C6470),
+                      ),
+                    ),
+                  ),
+                  const Icon(LucideIcons.chevronRight, size: 20, color: Color(0xFF8A94A6)),
+                ],
+              )
+            : Row(
+                children: [
+                  SmartScoreRing(score: score, size: 66),
+                  const SizedBox(width: 14),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'SmartScore',
+                          style: GoogleFonts.inter(
+                            fontSize: 12.5,
+                            fontWeight: FontWeight.w700,
+                            color: const Color(0xFF4C8C2B),
+                          ),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          _copy(score),
+                          style: GoogleFonts.inter(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w800,
+                            color: const Color(0xFF1C2434),
+                          ),
+                        ),
+                        const SizedBox(height: 5),
+                        _DeltaPill(delta: delta),
+                      ],
+                    ),
+                  ),
+                  const Icon(LucideIcons.chevronRight, size: 20, color: Color(0xFF8A94A6)),
+                ],
+              ),
+      ),
+    );
+  }
+}
+
+class _DeltaPill extends StatelessWidget {
+  const _DeltaPill({required this.delta});
+  final int delta;
+
+  @override
+  Widget build(BuildContext context) {
+    final IconData icon;
+    final Color color;
+    final String text;
+    if (delta > 0) {
+      icon = LucideIcons.trendingUp;
+      color = AppColors.incomeGreen;
+      text = '+$delta pts vs. el mes pasado';
+    } else if (delta < 0) {
+      icon = LucideIcons.trendingDown;
+      color = AppColors.expenseRed;
+      text = '$delta pts vs. el mes pasado';
+    } else {
+      icon = LucideIcons.minus;
+      color = const Color(0xFF8A94A6);
+      text = 'Sin cambios vs. el mes pasado';
+    }
+    return Row(
+      children: [
+        Icon(icon, size: 14, color: color),
+        const SizedBox(width: 4),
+        Flexible(
+          child: Text(
+            text,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: GoogleFonts.inter(
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+              color: color,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+// ─── Grid 2×2 del Resumen personal ────────────────────────────────────────────
+
+class _StatsGrid extends StatelessWidget {
+  const _StatsGrid({required this.summary});
+  final ProfileSummary? summary;
+
+  @override
+  Widget build(BuildContext context) {
+    final metas = summary?.metasActivas;
+    final gastos = summary?.gastosRegistrados;
+    final ahorro = summary?.dineroAhorrado;
+
+    return Column(
+      children: [
+        Row(
+          children: [
+            Expanded(
+              child: _StatCard(
+                icon: LucideIcons.target,
+                iconColor: AppColors.primaryGreen,
+                value: metas?.toString() ?? '—',
+                label: 'Metas activas',
+              ),
+            ),
+            const SizedBox(width: AppSpacing.sm),
+            Expanded(
+              // Placeholder visual: no hay tracking de racha (ver Fase E).
+              child: _StatCard(
+                icon: LucideIcons.flame,
+                iconColor: AppColors.warningAmber,
+                value: '23',
+                label: 'Días racha',
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: AppSpacing.sm),
+        Row(
+          children: [
+            Expanded(
+              child: _StatCard(
+                icon: LucideIcons.receipt,
+                iconColor: const Color(0xFF3B82F6),
+                value: gastos?.toString() ?? '—',
+                label: 'Gastos registrados',
+              ),
+            ),
+            const SizedBox(width: AppSpacing.sm),
+            Expanded(
+              child: _StatCard(
+                icon: LucideIcons.piggyBank,
+                iconColor: const Color(0xFFEC4899),
+                value: ahorro != null ? CurrencyFormatter.format(ahorro) : '—',
+                label: 'Dinero ahorrado',
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+}
+
+class _StatCard extends StatelessWidget {
+  const _StatCard({
+    required this.icon,
+    required this.iconColor,
+    required this.value,
+    required this.label,
+  });
+
+  final IconData icon;
+  final Color iconColor;
+  final String value;
+  final String label;
 
   @override
   Widget build(BuildContext context) {
     return Container(
+      padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(18),
         border: Border.all(color: const Color(0xFFE4E7EB)),
         boxShadow: [
           BoxShadow(
@@ -191,17 +516,37 @@ class _InfoSection extends StatelessWidget {
         ],
       ),
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _InfoRow(
-            icon: LucideIcons.user,
-            label: 'Nombre',
-            value: user?.nombre ?? '—',
+          Container(
+            width: 36,
+            height: 36,
+            decoration: BoxDecoration(
+              color: iconColor.withValues(alpha: 0.12),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Icon(icon, size: 18, color: iconColor),
           ),
-          const Divider(height: 1, color: Color(0xFFE4E7EB), indent: 16, endIndent: 16),
-          _InfoRow(
-            icon: LucideIcons.mail,
-            label: 'Correo',
-            value: user?.email ?? '—',
+          const SizedBox(height: 10),
+          Text(
+            value,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: GoogleFonts.inter(
+              fontSize: 19,
+              fontWeight: FontWeight.w800,
+              color: const Color(0xFF1C2434),
+              fontFeatures: const [FontFeature.tabularFigures()],
+            ),
+          ),
+          const SizedBox(height: 2),
+          Text(
+            label,
+            style: GoogleFonts.inter(
+              fontSize: 12,
+              fontWeight: FontWeight.w500,
+              color: const Color(0xFF8A94A6),
+            ),
           ),
         ],
       ),
@@ -209,330 +554,139 @@ class _InfoSection extends StatelessWidget {
   }
 }
 
-class _InfoRow extends StatelessWidget {
-  const _InfoRow({
-    required this.icon,
-    required this.label,
-    required this.value,
-  });
+// ─── Tarjeta Plan Premium (visual aspiracional) ───────────────────────────────
 
-  final IconData icon;
-  final String label;
-  final String value;
-
+class _PremiumCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+    return Container(
+      padding: const EdgeInsets.fromLTRB(18, 16, 12, 16),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(20),
+        gradient: const LinearGradient(
+          colors: [Color(0xFFFFF8E1), Color(0xFFFAFEF9)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        border: Border.all(color: const Color(0xFFF3E2B3)),
+      ),
       child: Row(
         children: [
-          Icon(icon, size: 18, color: const Color(0xFF8A94A6)),
-          const SizedBox(width: 14),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                label,
-                style: GoogleFonts.inter(
-                  fontSize: 11,
-                  fontWeight: FontWeight.w600,
-                  color: const Color(0xFF8A94A6),
-                ),
-              ),
-              const SizedBox(height: 2),
-              Text(
-                value,
-                style: GoogleFonts.inter(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w500,
-                  color: const Color(0xFF1C2434),
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-// ─── Sección de ocupación editable ────────────────────────────────────────────
-
-class _OcupacionSection extends StatelessWidget {
-  const _OcupacionSection({required this.user});
-  final dynamic user;
-
-  @override
-  Widget build(BuildContext context) {
-    final ocupacion = user?.ocupacion as OcupacionUsuario?;
-
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: const Color(0xFFE4E7EB)),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.03),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                Row(
+                  children: [
+                    const Text('👑', style: TextStyle(fontSize: 16)),
+                    const SizedBox(width: 6),
+                    Text(
+                      'Plan Premium',
+                      style: GoogleFonts.inter(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w800,
+                        color: const Color(0xFF1C2434),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 3),
                 Text(
-                  '¿A qué te dedicas?',
+                  'Desbloquea todas las funciones',
                   style: GoogleFonts.inter(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w700,
-                    color: const Color(0xFF1C2434),
+                    fontSize: 12.5,
+                    color: const Color(0xFF6B7280),
                   ),
                 ),
+                const SizedBox(height: 12),
                 GestureDetector(
-                  onTap: () => _showOcupacionSheet(context),
+                  onTap: () => comingSoon(context, 'El plan Premium'),
                   child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 9),
                     decoration: BoxDecoration(
-                      color: const Color(0xFF7CC827).withValues(alpha: 0.1),
+                      color: AppColors.primaryGreen,
                       borderRadius: BorderRadius.circular(50),
                     ),
                     child: Text(
-                      'Editar',
+                      'Ver beneficios',
                       style: GoogleFonts.inter(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
-                        color: const Color(0xFF5B9B1C),
+                        fontSize: 13,
+                        fontWeight: FontWeight.w700,
+                        color: Colors.white,
                       ),
                     ),
                   ),
                 ),
               ],
             ),
-            const SizedBox(height: 14),
-            if (ocupacion != null)
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-                decoration: BoxDecoration(
-                  color: const Color(0xFF7CC827).withValues(alpha: 0.08),
-                  borderRadius: BorderRadius.circular(50),
-                  border: Border.all(color: const Color(0xFF7CC827), width: 1.5),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(ocupacion.emoji, style: const TextStyle(fontSize: 16)),
-                    const SizedBox(width: 8),
-                    Text(
-                      ocupacion.label,
-                      style: GoogleFonts.inter(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w600,
-                        color: const Color(0xFF4C8C2B),
-                      ),
-                    ),
-                  ],
-                ),
-              )
-            else
-              Row(
-                children: [
-                  const Icon(LucideIcons.helpCircle, size: 16, color: Color(0xFF8A94A6)),
-                  const SizedBox(width: 8),
-                  Text(
-                    'No definida — toca Editar para personalizar tu simulador',
-                    style: GoogleFonts.inter(
-                      fontSize: 13,
-                      color: const Color(0xFF8A94A6),
-                    ),
-                  ),
-                ],
-              ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  void _showOcupacionSheet(BuildContext context) {
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: Colors.white,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-      ),
-      builder: (_) => _OcupacionBottomSheet(
-        current: user?.ocupacion as OcupacionUsuario?,
+          ),
+          const SizedBox(width: 8),
+          const Text('👑', style: TextStyle(fontSize: 52)),
+        ],
       ),
     );
   }
 }
 
-// ─── Bottom sheet selector de ocupación ──────────────────────────────────────
+// ─── Fila de acceso (Configuración / Seguridad / Preferencias) ────────────────
 
-class _OcupacionBottomSheet extends StatefulWidget {
-  const _OcupacionBottomSheet({required this.current});
-  final OcupacionUsuario? current;
+class _AccessRow extends StatelessWidget {
+  const _AccessRow({
+    required this.icon,
+    required this.label,
+    required this.onTap,
+  });
 
-  @override
-  State<_OcupacionBottomSheet> createState() => _OcupacionBottomSheetState();
-}
-
-class _OcupacionBottomSheetState extends State<_OcupacionBottomSheet> {
-  late OcupacionUsuario? _selected;
-  bool _saving = false;
-
-  @override
-  void initState() {
-    super.initState();
-    _selected = widget.current;
-  }
-
-  Future<void> _save() async {
-    if (_selected == null) return;
-    setState(() => _saving = true);
-    final success = await context.read<AuthProvider>().updateOcupacion(_selected!);
-    if (!mounted) return;
-    setState(() => _saving = false);
-    if (success) {
-      Navigator.of(context).pop();
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('No se pudo guardar. Intenta de nuevo.'),
-          backgroundColor: AppColors.expenseRed,
-        ),
-      );
-    }
-  }
+  final IconData icon;
+  final String label;
+  final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
-    return SafeArea(
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(24, 20, 24, 24),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Center(
-              child: Container(
+    return Material(
+      color: Colors.white,
+      borderRadius: BorderRadius.circular(16),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(16),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: const Color(0xFFE4E7EB)),
+          ),
+          child: Row(
+            children: [
+              Container(
                 width: 40,
-                height: 4,
+                height: 40,
                 decoration: BoxDecoration(
-                  color: const Color(0xFFE4E7EB),
-                  borderRadius: BorderRadius.circular(4),
+                  color: AppColors.primaryGreen.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Icon(icon, size: 20, color: const Color(0xFF4C8C2B)),
+              ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Text(
+                  label,
+                  style: GoogleFonts.inter(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w600,
+                    color: const Color(0xFF1C2434),
+                  ),
                 ),
               ),
-            ),
-            const SizedBox(height: 20),
-            Text(
-              '¿A qué te dedicas?',
-              style: GoogleFonts.inter(
-                fontSize: 17,
-                fontWeight: FontWeight.w800,
-                color: const Color(0xFF1C2434),
-              ),
-            ),
-            const SizedBox(height: 6),
-            Text(
-              'Esto personaliza los escenarios del simulador',
-              style: GoogleFonts.inter(
-                fontSize: 13,
-                color: const Color(0xFF6B7280),
-              ),
-            ),
-            const SizedBox(height: 20),
-            Wrap(
-              spacing: 8,
-              runSpacing: 10,
-              children: OcupacionUsuario.values.map((ocu) {
-                final isSelected = _selected == ocu;
-                return GestureDetector(
-                  onTap: () => setState(() => _selected = ocu),
-                  child: AnimatedContainer(
-                    duration: const Duration(milliseconds: 180),
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                    decoration: BoxDecoration(
-                      color: isSelected
-                          ? const Color(0xFF7CC827).withValues(alpha: 0.1)
-                          : const Color(0xFFF7F8FA),
-                      borderRadius: BorderRadius.circular(50),
-                      border: Border.all(
-                        color: isSelected
-                            ? const Color(0xFF7CC827)
-                            : const Color(0xFFE4E7EB),
-                        width: isSelected ? 1.5 : 1.0,
-                      ),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Text(ocu.emoji, style: const TextStyle(fontSize: 15)),
-                        const SizedBox(width: 7),
-                        Text(
-                          ocu.label,
-                          style: GoogleFonts.inter(
-                            fontSize: 14,
-                            fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
-                            color: isSelected
-                                ? const Color(0xFF4C8C2B)
-                                : const Color(0xFF5C6470),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                );
-              }).toList(),
-            ),
-            const SizedBox(height: 24),
-            SizedBox(
-              width: double.infinity,
-              height: 52,
-              child: ElevatedButton(
-                onPressed: (_selected == null || _saving) ? null : _save,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF111622),
-                  disabledBackgroundColor: const Color(0xFFE4E7EB),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(14),
-                  ),
-                  elevation: 0,
-                ),
-                child: _saving
-                    ? const SizedBox(
-                        width: 20,
-                        height: 20,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          color: Colors.white,
-                        ),
-                      )
-                    : Text(
-                        'Guardar',
-                        style: GoogleFonts.inter(
-                          fontSize: 15,
-                          fontWeight: FontWeight.w700,
-                          color: Colors.white,
-                        ),
-                      ),
-              ),
-            ),
-          ],
+              const Icon(LucideIcons.chevronRight, size: 20, color: Color(0xFF8A94A6)),
+            ],
+          ),
         ),
       ),
     );
   }
 }
 
-// ─── Botón de cerrar sesión ───────────────────────────────────────────────────
+// ─── Botón Cerrar sesión ──────────────────────────────────────────────────────
 
 class _LogoutButton extends StatelessWidget {
   @override
@@ -558,6 +712,25 @@ class _LogoutButton extends StatelessWidget {
           side: const BorderSide(color: AppColors.expenseRed, width: 1.2),
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
         ),
+      ),
+    );
+  }
+}
+
+// ─── Título de sección ────────────────────────────────────────────────────────
+
+class _SectionTitle extends StatelessWidget {
+  const _SectionTitle(this.text);
+  final String text;
+
+  @override
+  Widget build(BuildContext context) {
+    return Text(
+      text,
+      style: GoogleFonts.inter(
+        fontSize: 16,
+        fontWeight: FontWeight.w800,
+        color: const Color(0xFF1C2434),
       ),
     );
   }
