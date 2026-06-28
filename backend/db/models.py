@@ -133,6 +133,11 @@ class GoalContribution(Base):
     goal_id: Mapped[int] = mapped_column(ForeignKey("goals.id", ondelete="CASCADE"), index=True)
     user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True)
     monto: Mapped[float] = mapped_column(Numeric(10, 2, asdecimal=False))
+    # Fecha del aporte elegida por el usuario (default hoy). El gráfico de
+    # progreso agrupa por esta fecha, no por created_at (timestamp real de inserción).
+    fecha: Mapped[date] = mapped_column(Date, default=date.today, index=True)
+    # Nota opcional del aporte (ej. "Aporte de mi sueldo de junio").
+    descripcion: Mapped[Optional[str]] = mapped_column(String(200), nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now(), index=True)
 
     goal: Mapped["Goal"] = relationship(back_populates="contributions")
