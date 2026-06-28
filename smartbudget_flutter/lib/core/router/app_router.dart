@@ -14,6 +14,7 @@ import '../../presentation/screens/goals/goals_screen.dart';
 import '../../presentation/screens/goals/goal_create_screen.dart';
 import '../../presentation/screens/goals/goal_contribute_screen.dart';
 import '../../presentation/screens/goals/goal_contribute_confirm_screen.dart';
+import '../../presentation/screens/goals/goal_contribution_success_screen.dart';
 import '../../presentation/screens/goals/goal_created_screen.dart';
 import '../../presentation/screens/goals/goal_detail_screen.dart';
 import '../../presentation/screens/goals/goal_success_screen.dart';
@@ -157,6 +158,26 @@ class AppRouter {
           }
           return GoalSuccessScreen(
             goal: goal,
+            scoreDelta: (data?['scoreDelta'] as int?) ?? 0,
+          );
+        },
+      ),
+      GoRoute(
+        path: '/goals/contribute/success',
+        // ③: ¡Aporte realizado! (aporte que NO completa la meta). Recibe la
+        // meta actualizada + monto/fecha + el delta real del SmartScore.
+        parentNavigatorKey: rootNavigatorKey,
+        builder: (context, state) {
+          final data = state.extra as Map<String, dynamic>?;
+          final goal = data?['goal'] as GoalModel?;
+          final monto = (data?['monto'] as num?)?.toDouble();
+          if (goal == null || monto == null) {
+            return const GoalsScreen();
+          }
+          return GoalContributionSuccessScreen(
+            goal: goal,
+            monto: monto,
+            fecha: (data?['fecha'] as DateTime?) ?? DateTime.now(),
             scoreDelta: (data?['scoreDelta'] as int?) ?? 0,
           );
         },
