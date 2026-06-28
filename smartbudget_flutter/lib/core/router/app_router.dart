@@ -13,6 +13,7 @@ import '../../data/models/expense_model.dart';
 import '../../presentation/screens/goals/goals_screen.dart';
 import '../../presentation/screens/goals/goal_create_screen.dart';
 import '../../presentation/screens/goals/goal_contribute_screen.dart';
+import '../../presentation/screens/goals/goal_contribute_confirm_screen.dart';
 import '../../presentation/screens/goals/goal_created_screen.dart';
 import '../../presentation/screens/goals/goal_detail_screen.dart';
 import '../../presentation/screens/goals/goal_success_screen.dart';
@@ -169,6 +170,23 @@ class AppRouter {
           final id = int.tryParse(state.pathParameters['id'] ?? '');
           if (id == null) return const GoalsScreen();
           return GoalContributeScreen(goalId: id);
+        },
+      ),
+      GoRoute(
+        path: '/goals/:id/contribute/confirm',
+        // ②: confirmar aporte. Recibe monto/fecha/descripción por `extra`.
+        parentNavigatorKey: rootNavigatorKey,
+        builder: (context, state) {
+          final id = int.tryParse(state.pathParameters['id'] ?? '');
+          final data = state.extra as Map<String, dynamic>?;
+          final monto = (data?['monto'] as num?)?.toDouble();
+          if (id == null || monto == null) return const GoalsScreen();
+          return GoalContributeConfirmScreen(
+            goalId: id,
+            monto: monto,
+            fecha: (data?['fecha'] as DateTime?) ?? DateTime.now(),
+            descripcion: data?['descripcion'] as String?,
+          );
         },
       ),
       GoRoute(
