@@ -12,6 +12,7 @@ import '../../presentation/screens/expenses/expense_success_screen.dart';
 import '../../data/models/expense_model.dart';
 import '../../presentation/screens/goals/goals_screen.dart';
 import '../../presentation/screens/goals/goal_create_screen.dart';
+import '../../presentation/screens/goals/goal_contribute_screen.dart';
 import '../../presentation/screens/goals/goal_created_screen.dart';
 import '../../presentation/screens/goals/goal_detail_screen.dart';
 import '../../presentation/screens/goals/goal_success_screen.dart';
@@ -157,6 +158,17 @@ class AppRouter {
             goal: goal,
             scoreDelta: (data?['scoreDelta'] as int?) ?? 0,
           );
+        },
+      ),
+      // ─── Flujo de aporte a meta (① ingresar monto) ────────────────────────
+      // Se declara antes que /goals/:id para que el parámetro no la capture.
+      GoRoute(
+        path: '/goals/:id/contribute',
+        parentNavigatorKey: rootNavigatorKey,
+        builder: (context, state) {
+          final id = int.tryParse(state.pathParameters['id'] ?? '');
+          if (id == null) return const GoalsScreen();
+          return GoalContributeScreen(goalId: id);
         },
       ),
       GoRoute(

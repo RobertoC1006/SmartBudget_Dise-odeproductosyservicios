@@ -101,21 +101,35 @@ class GoalModel {
 class GoalContributionModel {
   final int id;
   final double monto;
+
+  /// Fecha del aporte elegida por el usuario. El gráfico agrupa por esta fecha.
+  final DateTime fecha;
+
+  /// Nota opcional del aporte.
+  final String? descripcion;
+
+  /// Timestamp real de inserción (created_at del backend).
   final DateTime createdAt;
 
   GoalContributionModel({
     required this.id,
     required this.monto,
+    required this.fecha,
+    this.descripcion,
     required this.createdAt,
   });
 
   factory GoalContributionModel.fromJson(Map<String, dynamic> json) {
+    final createdAt = json['created_at'] != null
+        ? DateTime.parse(json['created_at'])
+        : DateTime.now();
     return GoalContributionModel(
       id: json['id'] ?? 0,
       monto: json['monto'] != null ? (json['monto'] as num).toDouble() : 0.0,
-      createdAt: json['created_at'] != null
-          ? DateTime.parse(json['created_at'])
-          : DateTime.now(),
+      // Aportes viejos sin `fecha` caen a created_at (la migración igual los backfillea).
+      fecha: json['fecha'] != null ? DateTime.parse(json['fecha']) : createdAt,
+      descripcion: json['descripcion'] as String?,
+      createdAt: createdAt,
     );
   }
 }
@@ -149,6 +163,30 @@ class ContributeResult {
       scoreAnterior: json['score_anterior'] ?? 0,
       scoreNuevo: json['score_nuevo'] ?? 0,
       scoreDelta: json['score_delta'] ?? 0,
+    );
+  }
+}
+
+/// Impacto simulado de un aporte (sin persistir) para la pantalla de Confirmar.
+class ContributePreview {
+  final int scoreAnterior;
+  final int scoreNuevo;
+  final int scoreDelta;
+  final bool completaria;
+
+  ContributePreview({
+    required this.scoreAnterior,
+    required this.scoreNuevo,
+    required this.scoreDelta,
+    required this.completaria,
+  });
+
+  factory ContributePreview.fromJson(Map<String, dynamic> json) {
+    return ContributePreview(
+      scoreAnterior: json['score_anterior'] ?? 0,
+      scoreNuevo: json['score_nuevo'] ?? 0,
+      scoreDelta: json['score_delta'] ?? 0,
+      completaria: json['completaria'] ?? false,
     );
   }
 }

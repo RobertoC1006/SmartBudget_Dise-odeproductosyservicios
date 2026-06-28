@@ -12,7 +12,6 @@ import '../../../core/theme/app_spacing.dart';
 import '../../../core/theme/app_text_styles.dart';
 import '../../../data/models/goal_model.dart';
 import '../../../data/providers/goal_provider.dart';
-import '../../../data/providers/budget_provider.dart';
 import '../../../data/services/smartscore_service.dart';
 import '../../widgets/app_header.dart';
 import '../../widgets/bottom_nav_bar.dart';
@@ -109,7 +108,8 @@ class _GoalDetailScreenState extends State<GoalDetailScreen> {
                         child: SBButton.primary(
                           label: 'Aportar a esta meta',
                           icon: LucideIcons.plus,
-                          onPressed: () => _showContributeSheet(goal),
+                          onPressed: () =>
+                              context.push('/goals/${goal.id}/contribute'),
                           customColor: AppColors.primaryGreen,
                           padding: const EdgeInsets.symmetric(vertical: 16),
                         ),
@@ -593,8 +593,8 @@ class _GoalDetailScreenState extends State<GoalDetailScreen> {
   List<_CumPoint> _cumulativeByMonth(List<GoalContributionModel> aportes) {
     if (aportes.isEmpty) return [];
     final sorted = [...aportes]
-      ..sort((a, b) => a.createdAt.compareTo(b.createdAt));
-    final first = sorted.first.createdAt;
+      ..sort((a, b) => a.fecha.compareTo(b.fecha));
+    final first = sorted.first.fecha;
     final now = DateTime.now();
 
     final months = <DateTime>[];
@@ -609,7 +609,7 @@ class _GoalDetailScreenState extends State<GoalDetailScreen> {
     for (final month in months) {
       final lastDay = DateTime(month.year, month.month + 1, 0, 23, 59, 59);
       final cum = sorted
-          .where((a) => !a.createdAt.isAfter(lastDay))
+          .where((a) => !a.fecha.isAfter(lastDay))
           .fold<double>(0.0, (s, a) => s + a.monto);
       points.add(_CumPoint(_monthShort(month.month), cum));
     }
@@ -627,13 +627,13 @@ class _GoalDetailScreenState extends State<GoalDetailScreen> {
     if (aportes.isEmpty) return [];
     final now = DateTime.now();
     final sorted = [...aportes]
-      ..sort((a, b) => a.createdAt.compareTo(b.createdAt));
+      ..sort((a, b) => a.fecha.compareTo(b.fecha));
 
     final points = <_CumPoint>[];
     for (var d = 1; d <= now.day; d++) {
       final dayEnd = DateTime(now.year, now.month, d, 23, 59, 59);
       final cum = sorted
-          .where((a) => !a.createdAt.isAfter(dayEnd))
+          .where((a) => !a.fecha.isAfter(dayEnd))
           .fold<double>(0.0, (s, a) => s + a.monto);
       points.add(_CumPoint('$d', cum));
     }
@@ -928,183 +928,6 @@ class _GoalDetailScreenState extends State<GoalDetailScreen> {
     );
   }
 
-  // ─── Aportar ────────────────────────────────────────────────────────────
-  void _showContributeSheet(GoalModel goal) {
-    final formKey = GlobalKey<FormState>();
-    final amountController = TextEditingController();
-    final budgetProvider = context.read<BudgetProvider>();
-    final saldoDisponible =
-        budgetProvider.currentBudget?.saldoDisponible ?? 0.0;
-
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: AppColors.surfaceWhite,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-      ),
-      builder: (sheetContext) {
-        return Padding(
-          padding: EdgeInsets.only(
-            left: 20,
-            right: 20,
-            top: 20,
-            bottom: MediaQuery.of(sheetContext).viewInsets.bottom + 20,
-          ),
-          child: Form(
-            key: formKey,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Center(
-                  child: Container(
-                    width: 40,
-                    height: 4,
-                    decoration: BoxDecoration(
-                      color: AppColors.dividerGray,
-                      borderRadius: BorderRadius.circular(999),
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 18),
-                Text(
-                  'Aportar a esta meta',
-                  style: AppTextStyles.heading2.copyWith(fontSize: 18),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  goal.nombre,
-                  style: GoogleFonts.inter(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w600,
-                    color: AppColors.primaryGreen,
-                  ),
-                ),
-                const SizedBox(height: 16),
-                TextFormField(
-                  controller: amountController,
-                  autofocus: true,
-                  keyboardType: const TextInputType.numberWithOptions(
-                    decimal: true,
-                  ),
-                  inputFormatters: [
-                    FilteringTextInputFormatter.allow(RegExp(r'[0-9.]')),
-                  ],
-                  style: GoogleFonts.inter(
-                    fontSize: 22,
-                    fontWeight: FontWeight.w800,
-                  ),
-                  decoration: InputDecoration(
-                    prefixText: 'S/ ',
-                    hintText: '0.00',
-                    fillColor: const Color(0xFFF3FAF2),
-                    filled: true,
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(16),
-                      borderSide: const BorderSide(color: Color(0xFFE5E7EB)),
-                    ),
-                    enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(16),
-                      borderSide: const BorderSide(color: Color(0xFFE5E7EB)),
-                    ),
-                    focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(16),
-                      borderSide: const BorderSide(
-                        color: AppColors.primaryGreen,
-                        width: 1.5,
-                      ),
-                    ),
-                  ),
-                  validator: (v) {
-                    final val = double.tryParse((v ?? '').trim());
-                    if (val == null || val <= 0) {
-                      return 'Ingresa un monto válido';
-                    }
-                    if (val > saldoDisponible) {
-                      return 'Saldo disponible insuficiente (${GoalFormat.money(saldoDisponible)})';
-                    }
-                    if (val > goal.faltante) {
-                      return 'Supera lo que falta (${GoalFormat.money(goal.faltante)})';
-                    }
-                    return null;
-                  },
-                ),
-                const SizedBox(height: 6),
-                Align(
-                  alignment: Alignment.centerRight,
-                  child: Text(
-                    'Disponible: ${GoalFormat.money(saldoDisponible)}',
-                    style: AppTextStyles.caption.copyWith(
-                      color: AppColors.textSecondary,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 18),
-                SizedBox(
-                  width: double.infinity,
-                  child: SBButton.primary(
-                    label: 'Confirmar aporte',
-                    customColor: AppColors.primaryGreen,
-                    onPressed: () async {
-                      if (!(formKey.currentState?.validate() ?? false)) return;
-                      final amount = double.parse(amountController.text.trim());
-                      Navigator.pop(sheetContext);
-                      await _confirmContribution(goal, amount);
-                    },
-                  ),
-                ),
-                const SizedBox(height: 8),
-              ],
-            ),
-          ),
-        );
-      },
-    );
-  }
-
-  Future<void> _confirmContribution(GoalModel goal, double amount) async {
-    final provider = context.read<GoalProvider>();
-    final budgetProvider = context.read<BudgetProvider>();
-
-    final success = await provider.contribute(goalId: goal.id, amount: amount);
-    if (!mounted) return;
-
-    if (success) {
-      await budgetProvider.loadDashboard();
-      await provider.loadContributions(goal.id);
-      if (!mounted) return;
-      final result = provider.lastContributeResult;
-      final completed = result?.completada ?? false;
-
-      if (completed) {
-        // 1D: celebración. Usamos la meta ya recargada (saldo/estado al día)
-        // y el delta real que sumó este aporte al SmartScore.
-        final updated = provider.goalById(goal.id) ?? goal;
-        context.go('/goals/success', extra: {
-          'goal': updated,
-          'scoreDelta': result?.scoreDelta ?? 0,
-        });
-        return;
-      }
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Aporte de ${GoalFormat.money(amount)} realizado'),
-        ),
-      );
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            provider.errorMessage ?? 'No se pudo realizar el aporte',
-          ),
-        ),
-      );
-    }
-  }
-
   // ─── Historial ──────────────────────────────────────────────────────────
   void _showHistorySheet(GoalModel goal) {
     showModalBottomSheet(
@@ -1190,7 +1013,7 @@ class _GoalDetailScreenState extends State<GoalDetailScreen> {
                                     DateFormat(
                                       "dd MMM yyyy",
                                       'es',
-                                    ).format(a.createdAt),
+                                    ).format(a.fecha),
                                     style: GoogleFonts.inter(
                                       fontSize: 13,
                                       fontWeight: FontWeight.w500,

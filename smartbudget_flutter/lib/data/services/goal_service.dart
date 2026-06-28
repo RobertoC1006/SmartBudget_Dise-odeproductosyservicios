@@ -72,15 +72,43 @@ class GoalService {
     }
   }
 
-  Future<ContributeResult> contributeToGoal(int goalId, double amount) async {
+  Future<ContributeResult> contributeToGoal(
+    int goalId,
+    double amount, {
+    DateTime? fecha,
+    String? descripcion,
+  }) async {
     try {
+      final data = <String, dynamic>{'monto': amount};
+      if (fecha != null) {
+        data['fecha'] = fecha.toIso8601String().split('T')[0]; // yyyy-MM-dd
+      }
+      if (descripcion != null && descripcion.trim().isNotEmpty) {
+        data['descripcion'] = descripcion.trim();
+      }
       final response = await _apiClient.dio.post(
         ApiEndpoints.contributeGoal(goalId),
-        data: {'monto': amount},
+        data: data,
       );
       return ContributeResult.fromJson(response.data);
     } on DioException catch (e) {
       final message = e.response?.data['detail'] ?? 'Error al realizar aportación';
+      throw Exception(message);
+    }
+  }
+
+  /// Simula un aporte (sin guardarlo) para mostrar el impacto real en el
+  /// SmartScore en la pantalla de Confirmar aporte.
+  Future<ContributePreview> previewContribution(int goalId, double amount) async {
+    try {
+      final response = await _apiClient.dio.post(
+        ApiEndpoints.contributePreviewGoal(goalId),
+        data: {'monto': amount},
+      );
+      return ContributePreview.fromJson(response.data);
+    } on DioException catch (e) {
+      final message =
+          e.response?.data['detail'] ?? 'Error al calcular el impacto del aporte';
       throw Exception(message);
     }
   }

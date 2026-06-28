@@ -133,13 +133,19 @@ class GoalProvider extends ChangeNotifier {
   Future<bool> contribute({
     required int goalId,
     required double amount,
+    DateTime? fecha,
+    String? descripcion,
   }) async {
     _isLoading = true;
     _errorMessage = null;
     notifyListeners();
     try {
-      _lastContributeResult =
-          await _goalService.contributeToGoal(goalId, amount);
+      _lastContributeResult = await _goalService.contributeToGoal(
+        goalId,
+        amount,
+        fecha: fecha,
+        descripcion: descripcion,
+      );
       await loadGoals();
       return true;
     } catch (e) {
@@ -148,6 +154,20 @@ class GoalProvider extends ChangeNotifier {
     } finally {
       _isLoading = false;
       notifyListeners();
+    }
+  }
+
+  /// Simula el aporte (sin guardarlo) para la pantalla de Confirmar.
+  /// Devuelve `null` si falla (la pantalla cae a un copy cualitativo).
+  Future<ContributePreview?> previewContribution({
+    required int goalId,
+    required double amount,
+  }) async {
+    try {
+      return await _goalService.previewContribution(goalId, amount);
+    } catch (e) {
+      _errorMessage = e.toString().replaceAll('Exception: ', '');
+      return null;
     }
   }
 
