@@ -93,19 +93,19 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       _AccessRow(
                         icon: LucideIcons.settings,
                         label: 'Configuración',
-                        onTap: () => context.push('/profile/settings'),
+                        onTap: () => comingSoon(context, 'Configuración'),
                       ).animate().fade(delay: 300.ms, duration: 320.ms),
                       const SizedBox(height: AppSpacing.sm),
                       _AccessRow(
                         icon: LucideIcons.shield,
                         label: 'Seguridad',
-                        onTap: () => context.push('/profile/security'),
+                        onTap: () => comingSoon(context, 'Seguridad'),
                       ).animate().fade(delay: 340.ms, duration: 320.ms),
                       const SizedBox(height: AppSpacing.sm),
                       _AccessRow(
                         icon: LucideIcons.slidersHorizontal,
                         label: 'Preferencias',
-                        onTap: () => context.push('/profile/preferences'),
+                        onTap: () => comingSoon(context, 'Preferencias'),
                       ).animate().fade(delay: 380.ms, duration: 320.ms),
                       const SizedBox(height: AppSpacing.md),
                       _LogoutButton()
@@ -208,7 +208,7 @@ class _ProfileHeader extends StatelessWidget {
                   ),
                   const SizedBox(width: 8),
                   GestureDetector(
-                    onTap: () => context.push('/profile/settings'),
+                    onTap: () => comingSoon(context, 'La edición de perfil'),
                     child: Container(
                       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                       decoration: BoxDecoration(
@@ -285,7 +285,7 @@ class _ProfileHeader extends StatelessWidget {
           top: 16,
           right: 8,
           child: IconButton(
-            onPressed: () => context.push('/profile/settings'),
+            onPressed: () => comingSoon(context, 'Configuración'),
             icon: const Icon(LucideIcons.settings, size: 22),
             color: const Color(0xFF5C6470),
             tooltip: 'Configuración',
