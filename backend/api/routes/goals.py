@@ -6,6 +6,7 @@ from api.schemas.goals import (
     GoalContribute,
     ContributionResponse,
     ContributeResult,
+    ContributePreviewResponse,
 )
 from api.dependencies import get_db, get_current_user
 from core.goals import (
@@ -15,6 +16,7 @@ from core.goals import (
     eliminar_meta,
     editar_meta,
     listar_aportes,
+    previsualizar_impacto_aporte,
 )
 from core import smartscore as smartscore_core
 from core.exceptions import (
@@ -79,7 +81,10 @@ def contribute_to_goal(goal_id: int, req: GoalContribute, db=Depends(get_db), us
         # SmartScore antes del aporte (para medir el impacto real en finanzas)
         score_anterior = _safe_score(db, user.id)
 
-        goal = aportar_a_meta(db, user.id, goal_id, req.monto)
+        goal = aportar_a_meta(
+            db, user.id, goal_id, req.monto,
+            fecha=req.fecha, descripcion=req.descripcion,
+        )
 
         # Recalcular y persistir el snapshot del mes tras el aporte
         score_nuevo = _safe_score(db, user.id, persistir=True)
@@ -105,6 +110,24 @@ def contribute_to_goal(goal_id: int, req: GoalContribute, db=Depends(get_db), us
         raise HTTPException(status_code=404, detail=str(e))
     except PresupuestoNoEncontradoError as e:
         raise HTTPException(status_code=404, detail=str(e))
+
+@router.post("/{goal_id}/contribute/preview", response_model=ContributePreviewResponse)
+def preview_contribution(goal_id: int, req: GoalContribute, db=Depends(get_db), user=Depends(get_current_user)):
+    """
+    Simula un aporte SIN guardarlo y devuelve el impacto real en el SmartScore
+    (para el "+N pts" de la pantalla de Confirmar aporte).
+    """
+    try:
+        return previsualizar_impacto_aporte(db, user.id, goal_id, req.monto)
+    except SaldoInsuficienteError as e:
+        raise HTTPException(status_code=422, detail=str(e))
+    except MetaCompletadaError as e:
+        raise HTTPException(status_code=409, detail=str(e))
+    except MetaNoEncontradaError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+    except PresupuestoNoEncontradoError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+
 
 @router.delete("/{goal_id}", status_code=204)
 def delete_goal(goal_id: int, db=Depends(get_db), user=Depends(get_current_user)):

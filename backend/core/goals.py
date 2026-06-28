@@ -16,7 +16,8 @@ from core.exceptions import (
     SaldoInsuficienteError,
     MetaCompletadaError,
     MetaLimiteError,
-    MetaNoEncontradaError
+    MetaNoEncontradaError,
+    PresupuestoNoEncontradoError,
 )
 from core.budgets import obtener_presupuesto_activo
 from core.config import settings
@@ -104,10 +105,20 @@ def editar_meta(
     db.refresh(goal)
     return goal
 
-def aportar_a_meta(db: Session, user_id: int, goal_id: int, monto: float) -> Goal:
+def aportar_a_meta(
+    db: Session,
+    user_id: int,
+    goal_id: int,
+    monto: float,
+    fecha: date = None,
+    descripcion: str = None,
+) -> Goal:
     """
     Traslada dinero del Presupuesto Activo hacia la Meta.
-    
+
+    `fecha` y `descripcion` se guardan en el registro del aporte (la fecha por
+    defecto es hoy). El gráfico de progreso agrupa por `fecha`.
+
     Validaciones:
     1. Que exista presupuesto para este mes.
     2. Que el presupuesto tenga saldo suficiente.
@@ -134,7 +145,13 @@ def aportar_a_meta(db: Session, user_id: int, goal_id: int, monto: float) -> Goa
     goal.saldo_acumulado += monto
 
     # 4. Registrar el aporte en el historial (misma transacción que el trasvase)
-    db.add(GoalContribution(goal_id=goal.id, user_id=user_id, monto=monto))
+    db.add(GoalContribution(
+        goal_id=goal.id,
+        user_id=user_id,
+        monto=monto,
+        fecha=fecha or date.today(),
+        descripcion=descripcion,
+    ))
 
     # 5. Actualizar estado de la meta
     if goal.saldo_acumulado >= goal.monto_objetivo:
@@ -224,13 +241,66 @@ def listar_aportes(db: Session, user_id: int, goal_id: int) -> list:
 
     aportes = db.query(GoalContribution).filter(
         GoalContribution.goal_id == goal_id
-    ).order_by(GoalContribution.created_at.asc()).all()
+    ).order_by(GoalContribution.fecha.asc(), GoalContribution.id.asc()).all()
 
     return [
         {
             "id": a.id,
             "monto": a.monto,
+            "fecha": a.fecha.isoformat() if a.fecha else None,
+            "descripcion": a.descripcion,
             "created_at": a.created_at.isoformat() if a.created_at else None,
         }
         for a in aportes
     ]
+
+
+def previsualizar_impacto_aporte(db: Session, user_id: int, goal_id: int, monto: float) -> dict:
+    """
+    Simula un aporte SIN persistirlo y devuelve el impacto real en el SmartScore.
+
+    Usa un savepoint (`begin_nested`) que se revierte SIEMPRE: el cálculo del
+    score "ve" el estado posterior al aporte (la meta más avanzada y el saldo del
+    presupuesto más bajo), pero nada queda guardado. Así el delta es real y
+    completo (el aporte sube el criterio de metas pero puede bajar el de ahorro
+    vs. mes anterior). Valida lo mismo que `aportar_a_meta`.
+
+    Retorna: {score_anterior, score_nuevo, score_delta, completaria}.
+    """
+    # Import local para no arriesgar ciclos (smartscore importa de core.budgets).
+    from core import smartscore as smartscore_core
+
+    try:
+        score_anterior = smartscore_core.calcular_score(db, user_id)
+    except PresupuestoNoEncontradoError:
+        score_anterior = 0
+
+    budget = obtener_presupuesto_activo(db, user_id)
+    goal = db.query(Goal).filter(Goal.id == goal_id, Goal.user_id == user_id).first()
+
+    if not goal:
+        raise MetaNoEncontradaError("La meta no existe o no te pertenece.")
+    if goal.estado == EstadoMeta.COMPLETADA:
+        raise MetaCompletadaError("Esta meta ya ha sido alcanzada.")
+    if budget.saldo_disponible < monto:
+        raise SaldoInsuficienteError(
+            f"No tienes saldo suficiente en tu presupuesto mensual. Disponible: S/. {budget.saldo_disponible}"
+        )
+
+    sp = db.begin_nested()
+    try:
+        budget.saldo_disponible -= monto
+        goal.saldo_acumulado += monto
+        completaria = goal.saldo_acumulado >= goal.monto_objetivo
+        goal.estado = EstadoMeta.COMPLETADA if completaria else EstadoMeta.EN_PROGRESO
+        db.flush()  # el cálculo del score ve el estado simulado
+        score_nuevo = smartscore_core.calcular_score(db, user_id)
+    finally:
+        sp.rollback()  # nada se persiste
+
+    return {
+        "score_anterior": score_anterior,
+        "score_nuevo": score_nuevo,
+        "score_delta": score_nuevo - score_anterior,
+        "completaria": completaria,
+    }

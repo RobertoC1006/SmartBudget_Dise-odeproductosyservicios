@@ -27,15 +27,30 @@ class GoalUpdate(BaseModel):
 
 class GoalContribute(BaseModel):
     monto: float = Field(..., gt=0)
+    fecha: Optional[date] = None
+    descripcion: Optional[str] = Field(default=None, max_length=200)
 
 
 class ContributionResponse(BaseModel):
     """Un aporte del historial de una meta."""
     id: int
     monto: float
+    fecha: Optional[date] = None
+    descripcion: Optional[str] = None
     created_at: Optional[datetime] = None
 
     model_config = ConfigDict(from_attributes=True)
+
+
+class ContributePreviewResponse(BaseModel):
+    """
+    Impacto simulado de un aporte (sin persistir). Alimenta el "+N pts" de la
+    pantalla de Confirmar aporte antes de que el usuario confirme.
+    """
+    score_anterior: int
+    score_nuevo: int
+    score_delta: int
+    completaria: bool
 
 
 class ContributeResult(BaseModel):
