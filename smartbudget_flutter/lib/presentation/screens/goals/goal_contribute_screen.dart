@@ -10,15 +10,14 @@ import 'package:intl/intl.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../core/theme/app_text_styles.dart';
-import '../../../data/models/goal_model.dart';
 import '../../../data/providers/goal_provider.dart';
 import '../../../data/providers/budget_provider.dart';
 import '../../widgets/app_header.dart';
 import '../../widgets/bottom_nav_bar.dart';
 import '../../widgets/sb_button.dart';
 import '../../widgets/sb_entrance_animation.dart';
-import 'widgets/goal_category_icon.dart';
 import 'widgets/goal_format.dart';
+import 'widgets/goal_progress_card.dart';
 
 /// ① del flujo de aporte a meta: ingresar monto, fecha y descripción.
 /// Reemplaza el bottom sheet de aporte del detalle. "Continuar" lleva a la
@@ -151,7 +150,7 @@ class _GoalContributeScreenState extends State<GoalContributeScreen> {
                       _buildTitleRow(),
                       const SizedBox(height: AppSpacing.md),
 
-                      _GoalCard(goal: goal).animateEntrance(delay: 60.ms),
+                      GoalProgressCard(goal: goal).animateEntrance(delay: 60.ms),
                       const SizedBox(height: AppSpacing.lg),
 
                       _label('¿Cuánto deseas aportar?'),
@@ -406,79 +405,6 @@ class _GoalContributeScreenState extends State<GoalContributeScreen> {
           borderRadius: BorderRadius.circular(16),
           borderSide: const BorderSide(color: AppColors.primaryGreen, width: 2),
         ),
-      ),
-    );
-  }
-}
-
-/// Tarjeta compacta de la meta (icono + nombre + saldo/objetivo + progreso).
-class _GoalCard extends StatelessWidget {
-  const _GoalCard({required this.goal});
-  final GoalModel goal;
-
-  @override
-  Widget build(BuildContext context) {
-    final cat = resolveCategoria(goal.categoria, goal.nombre);
-    final pct = (goal.progreso * 100).round();
-    return Container(
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: AppColors.primaryLight,
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: AppColors.accentGreenBorder),
-      ),
-      child: Row(
-        children: [
-          GoalCategoryIcon(category: cat, size: 54),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  goal.nombre,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: GoogleFonts.inter(
-                    fontSize: 15,
-                    fontWeight: FontWeight.w800,
-                    color: const Color(0xFF1C2434),
-                  ),
-                ),
-                const SizedBox(height: 3),
-                Text(
-                  '${GoalFormat.money(goal.saldoAcumulado)} de ${GoalFormat.money(goal.montoObjetivo)}',
-                  style: GoogleFonts.inter(fontSize: 12.5, color: AppColors.textSecondary),
-                ),
-                const SizedBox(height: 8),
-                Row(
-                  children: [
-                    Expanded(
-                      child: ClipRRect(
-                        borderRadius: BorderRadius.circular(8),
-                        child: LinearProgressIndicator(
-                          value: goal.progreso,
-                          minHeight: 8,
-                          backgroundColor: Colors.white,
-                          valueColor: const AlwaysStoppedAnimation(AppColors.primaryGreen),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    Text(
-                      '$pct%',
-                      style: GoogleFonts.inter(
-                        fontSize: 12.5,
-                        fontWeight: FontWeight.w800,
-                        color: AppColors.primaryDark,
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-        ],
       ),
     );
   }
